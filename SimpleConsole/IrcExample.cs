@@ -1,28 +1,21 @@
-﻿using ChatSharp;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.IO;
+using ChatSharp;
 
 namespace SimpleConsole
 {
     internal class IrcExample
     {
-        public IrcClient Client = null;
+        public IrcClient Client;
 
         public void Connect(StringInput pReponses = null, string pChannel = "#theonlysykan")
         {
             var username = File.ReadAllText("Username.USER");
             var password = File.ReadAllText("SecretTokenDontLOOK.TOKEN");
 
-            Client = new IrcClient("irc.chat.twitch.tv:6667", new IrcUser(username, username, password));
+            Client = new IrcClient("irc.chat.twitch.tv:6667",
+                new IrcUser(username, username, password));
 
-            Client.ConnectionComplete += (s, e) =>
-            {
-                Client.JoinChannel(pChannel);
-            };
+            Client.ConnectionComplete += (s, e) => { Client.JoinChannel(pChannel); };
 
             Client.ChannelMessageRecieved += (s, e) =>
             {
@@ -46,9 +39,7 @@ namespace SimpleConsole
                 //}
             };
 
-
             Client.ConnectAsync();
-
         }
     }
 }

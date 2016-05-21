@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Speech.Synthesis;
 using System.Threading;
 
@@ -104,8 +103,6 @@ namespace SimpleConsole
         public SpeechSynthesizer Synth;
         private readonly ReadOnlyCollection<InstalledVoice> _voices;
         private int _index;
-        private static int _maxLengthSoFar = -256;
-//        private static int _minLengthSoFar = 256;
 
         public void RandomVoice()
         {
@@ -118,9 +115,9 @@ namespace SimpleConsole
 
         public void SetRate(string pUsername, string pMessage)
         {
-//            int d = (( * 2) - 1) * 5;
+//            int d = ((*2) - 1)*5;
             // ReSharper disable once PossibleLossOfFraction
-            var n1 = (float) (pUsername.Length/_maxLengthSoFar);
+            var n1 = (float) (pUsername.Length/Program.MaxLengthSoFar);
             var n2 = n1*2;
             var n3 = n2 - 1;
             var n4 = n3*5;

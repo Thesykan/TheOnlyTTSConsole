@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Speech.Synthesis;
 using System.Threading;
 
 public delegate void StringInput(string pUsername, string pInput);
@@ -31,7 +29,10 @@ namespace SimpleConsole
             while (true)
             {
                 var writeMessage = Console.ReadLine();
-                ex.Client.SendMessage(writeMessage, "#theonlysykan");
+                if (writeMessage?.Trim() == "q")
+                    break;
+                if(writeMessage?.Trim() != string.Empty)
+                    ex.Client.SendMessage(writeMessage, "#theonlysykan");
             }
         }
 
@@ -44,8 +45,8 @@ namespace SimpleConsole
 //        static SpeechSynthesizer _synth;
 //        static ReadOnlyCollection<InstalledVoice> _voices;
 //        static int _index = 0;
-        static int _maxLengthSoFar = -256;
-        static int _minLengthSoFar = 256;
+        public static int MaxLengthSoFar { get; private set; } = -256;
+        public static int MinLengthSoFar { get; private set; } = 256;
 
         private static void WriteLine(string pUsername, string pText)
         {
@@ -62,11 +63,11 @@ namespace SimpleConsole
             }
             pText = string.Join(" ", words);
 
-            if (pUsername.Length > _maxLengthSoFar)
-                _maxLengthSoFar = pUsername.Length;
+            if (pUsername.Length > MaxLengthSoFar)
+                MaxLengthSoFar = pUsername.Length;
 
-            if (pUsername.Length < _minLengthSoFar)
-                _minLengthSoFar = pUsername.Length;
+            if (pUsername.Length < MinLengthSoFar)
+                MinLengthSoFar = pUsername.Length;
 
             SyncPool.Init();
 
