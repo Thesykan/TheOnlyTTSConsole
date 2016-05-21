@@ -8,28 +8,28 @@ using System.Threading.Tasks;
 
 namespace SimpleConsole
 {
-    class IrcExample
+    internal class IrcExample
     {
-        public IrcClient client = null;
+        public IrcClient Client = null;
 
-        public void Connect(StringInput p_reponses = null, String p_channel = "#theonlysykan")
+        public void Connect(StringInput pReponses = null, string pChannel = "#theonlysykan")
         {
-            String username = File.ReadAllText("Username.USER");
-            String password = File.ReadAllText("SecretTokenDontLOOK.TOKEN");
+            var username = File.ReadAllText("Username.USER");
+            var password = File.ReadAllText("SecretTokenDontLOOK.TOKEN");
 
-            client = new IrcClient("irc.chat.twitch.tv:6667", new IrcUser(username, username, password));
+            Client = new IrcClient("irc.chat.twitch.tv:6667", new IrcUser(username, username, password));
 
-            client.ConnectionComplete += (s, e) =>
+            Client.ConnectionComplete += (s, e) =>
             {
-                client.JoinChannel(p_channel);
+                Client.JoinChannel(pChannel);
             };
 
-            client.ChannelMessageRecieved += (s, e) =>
+            Client.ChannelMessageRecieved += (s, e) =>
             {
                 //nskaarup!nskaarup@nskaarup.tmi.twitch.tv
                 var anotherUsername = e.IrcMessage.Prefix.Split('!')[0];
 
-                p_reponses(anotherUsername, e.IrcMessage.Parameters[1]);
+                pReponses?.Invoke(anotherUsername, e.IrcMessage.Parameters[1]);
                 //var channel = client.Channels[e.PrivateMessage.Source];
 
                 //if (e.PrivateMessage.Message == ".list")
@@ -47,7 +47,7 @@ namespace SimpleConsole
             };
 
 
-            client.ConnectAsync();
+            Client.ConnectAsync();
 
         }
     }

@@ -1,42 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
-using System.Linq;
+using System.Globalization;
 using System.Speech.Synthesis;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace SimpleConsole
 {
-    class SyncPool
+    internal class SyncPool
     {
+        private static List<Sync> _syncList;
 
-        static List<Sync> _syncList = null;
         public static void Init()
         {
             _readyStateSyncQueue = new Queue<Sync>();
-            if (_syncList == null)
-            {
-                _syncList = new List<Sync>();
-                _syncList.Add(new Sync(Queue));
-                _syncList.Add(new Sync(Queue));
-                _syncList.Add(new Sync(Queue));
-            }
+            if (_syncList != null) return;
+            _syncList = new List<Sync> {new Sync(Queue), new Sync(Queue), new Sync(Queue)};
         }
 
-        static int syncIndex = 0;
-        static ManualResetEvent _resetEvent = new ManualResetEvent(false);
-        public static void SpeakText(String p_username, String p_text)
+        private static int _syncIndex;
+        private static readonly ManualResetEvent ResetEvent = new ManualResetEvent(false);
+
+        public static void SpeakText(string pUsername, string pText)
         {
-            Sync synth = null;
+            _syncIndex++;
+            if (_syncIndex >= _syncList.Count)
+                _syncIndex = 0;
 
-            syncIndex++;
-            if (syncIndex >= _syncList.Count)
-                syncIndex = 0;
-
-            synth = _syncList[syncIndex];
+            var synth = _syncList[_syncIndex];
 
             //while (true)
             //{
@@ -61,105 +52,106 @@ namespace SimpleConsole
             //    SpeakText(p_username, p_text);
             //    return;
             //}
-            
-            synth._synth.Rate = 2;
-            synth._synth.Speak(p_username);
 
-            synth.SetRate(p_username, p_text);
+            synth.Synth.Rate = 2;
+            synth.Synth.Speak(pUsername);
+
+            synth.SetRate(pUsername, pText);
             synth.RandomVoice();
 
             // Speak a string.
-            synth._synth.Speak(p_text);
+            synth.Synth.Speak(pText);
 
-            synth.enqueue();
+            synth.Enqueue();
         }
 
         private static Queue<Sync> _readyStateSyncQueue;
-        private static void Queue(Sync p_sync, bool p_addOrRemove)
-        {
-            if (p_addOrRemove)
-            {
-                lock (_resetEvent)
-                {
-                    _readyStateSyncQueue.Enqueue(p_sync);
-                }
-                _resetEvent.Set();
-            }
-        }
 
+        private static void Queue(Sync pSync, bool pAddOrRemove)
+        {
+            if (!pAddOrRemove) return;
+            lock (ResetEvent)
+            {
+                _readyStateSyncQueue.Enqueue(pSync);
+            }
+            ResetEvent.Set();
+        }
     }
 
-    delegate void SyncOp(Sync p_sync, bool p_bool);
+    internal delegate void SyncOp(Sync pSync, bool pBool);
 
-    class Sync
+    internal class Sync
     {
-        SyncOp _op;
-        public Sync(SyncOp p_op)
-        {
-            _synth = new SpeechSynthesizer();
-            _synth.SetOutputToDefaultAudioDevice();
-            _voices = _synth.GetInstalledVoices();
+        private readonly SyncOp _op;
 
-            _op = p_op;
+        public Sync(SyncOp pOp)
+        {
+            Synth = new SpeechSynthesizer();
+            Synth.SetOutputToDefaultAudioDevice();
+            _voices = Synth.GetInstalledVoices();
+
+            _op = pOp;
             _op(this, true);
             //var path = Directory.GetCurrentDirectory() + "\\..\\..\\TheOnlySykanLexicon.pls";
             //_synth.AddLexicon(new Uri(path), "application/pls+xml");
         }
 
-        public void enqueue()
+        public void Enqueue()
         {
             _op(this, true);
         }
 
-        public SpeechSynthesizer _synth;
-        ReadOnlyCollection<InstalledVoice> _voices;
-        int index = 0;
-        static int maxLengthSoFar = int.MinValue;
-        static int minLengthSoFar = int.MaxValue;
+        public SpeechSynthesizer Synth;
+        private readonly ReadOnlyCollection<InstalledVoice> _voices;
+        private int _index;
+        private static int _maxLengthSoFar = -256;
+//        private static int _minLengthSoFar = 256;
 
         public void RandomVoice()
         {
-            index++;
-            if (index >= _voices.Count)
-                index = 0;
+            _index++;
+            if (_index >= _voices.Count)
+                _index = 0;
 
-            _synth.SelectVoice(_voices[index].VoiceInfo.Name);
+            Synth.SelectVoice(_voices[_index].VoiceInfo.Name);
         }
 
-        public void SetRate(String p_username, String p_message)
+        public void SetRate(string pUsername, string pMessage)
         {
-            //int d = (( * 2) - 1) * 5;
-            float n1 = (p_username.Length / maxLengthSoFar);
-            float n2 = n1 * 2;
-            float n3 = n2 - 1;
-            float n4 = n3 * 5;
+//            int d = (( * 2) - 1) * 5;
+            // ReSharper disable once PossibleLossOfFraction
+            var n1 = (float) (pUsername.Length/_maxLengthSoFar);
+            var n2 = n1*2;
+            var n3 = n2 - 1;
+            var n4 = n3*5;
 
-            int d = (int)n4;
+            var d = (int) n4;
 
-            if (p_message.Length > 50)
-            {
-                d = d + (Math.Abs(d) / 2) + 2;
-
-                if (p_message.Length > 100)
-                {
-                    d = d + (Math.Abs(d) / 2) + 2;
-
-                    if (p_message.Length > 200)
-                    {
-                        d = d + (Math.Abs(d) / 2) + 2;
-
-                        if (p_message.Length > 300)
-                        {
-                            d = d + (Math.Abs(d) / 2) + 2;
-                        }
-                    }
-                }
-            }
+            d = SpeedUp(d, pMessage);
 
             d = Math.Min(d, 10);
             d = Math.Max(-10, d);
-            _synth.Rate = d;
+            Synth.Rate = d;
         }
 
+        public int SpeedUp(int v, string m)
+        {
+            int j = 0;
+            if (m.Length > 50)
+                j++;
+            if (m.Length > 100)
+                j++;
+            if (m.Length > 200)
+                j++;
+            if (m.Length > 300)
+                j++;
+
+            for (int i = 0; i < j; i++)
+            {
+                v = v + (Math.Abs(v)/2) + 2;
+            }
+
+            return v;
+        }
     }
 }
