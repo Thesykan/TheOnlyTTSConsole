@@ -35,52 +35,6 @@
     <Reference Include="ChatSharp">
       <HintPath>..\..\..\..\Twitch Creative\Libraries\ChatSharp\ChatSharp\bin\Release\ChatSharp.dll</HintPath>
     </Reference>
-    <Reference Include="DotNetOpenAuth.ApplicationBlock">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\DotNetOpenAuth.ApplicationBlock.dll</HintPath>
-    </Reference>
-    <Reference Include="DotNetOpenAuth.Core">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\DotNetOpenAuth.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="DotNetOpenAuth.OAuth">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\DotNetOpenAuth.OAuth.dll</HintPath>
-    </Reference>
-    <Reference Include="DotNetOpenAuth.OAuth.Common">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\DotNetOpenAuth.OAuth.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="DotNetOpenAuth.OAuth.Consumer">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\DotNetOpenAuth.OAuth.Consumer.dll</HintPath>
-    </Reference>
-    <Reference Include="DotNetOpenAuth.OAuth2">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\DotNetOpenAuth.OAuth2.dll</HintPath>
-    </Reference>
-    <Reference Include="DotNetOpenAuth.OAuth2.Client">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\DotNetOpenAuth.OAuth2.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="DotNetOpenAuth.OAuth2.Client.UI">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\DotNetOpenAuth.OAuth2.Client.UI.dll</HintPath>
-    </Reference>
-    <Reference Include="DotNetOpenAuth.OAuth2.ClientAuthorization">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\DotNetOpenAuth.OAuth2.ClientAuthorization.dll</HintPath>
-    </Reference>
-    <Reference Include="DotNetOpenAuth.OpenId">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\DotNetOpenAuth.OpenId.dll</HintPath>
-    </Reference>
-    <Reference Include="DotNetOpenAuth.OpenId.Provider">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\DotNetOpenAuth.OpenId.Provider.dll</HintPath>
-    </Reference>
-    <Reference Include="DotNetOpenAuth.OpenId.RelyingParty">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\DotNetOpenAuth.OpenId.RelyingParty.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Math">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\Mono.Math.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="Org.Mentalis.Security.Cryptography">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\Org.Mentalis.Security.Cryptography.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net.Http.Formatting, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -93,9 +47,6 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Validation">
-      <HintPath>..\..\..\..\Twitch Creative\Libraries\DotNetOpenAuth\samples\OAuthConsumerWpf\bin\Release\Validation.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GetAuthToken.cs" />
