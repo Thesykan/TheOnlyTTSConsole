@@ -25,6 +25,7 @@ namespace SimpleConsole
                 File.WriteAllText("SecretTokenDontLOOK.TOKEN", password);
             }
 
+            string channel = "#theonlysykan";
 
             if (string.IsNullOrEmpty(channel))
                 channel = username; // join own channel.
