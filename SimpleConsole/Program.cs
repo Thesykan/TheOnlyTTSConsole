@@ -1,85 +1,112 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Speech.Synthesis;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
-public delegate void StringInput(String p_username, String p_input);
+public delegate void StringInput(string pUsername, string pInput);
 
 namespace SimpleConsole
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
+            string username = string.Empty;
+
             if (!File.Exists("Username.USER"))
             {
-                String username = GetResponseFromUser("UserName?");
+                username = GetResponseFromUser("UserName?");
                 File.WriteAllText("Username.USER", username);
             }
 
             if (!File.Exists("SecretTokenDontLOOK.TOKEN"))
             {
-                String password = GetResponseFromUser("Token?");
+                var password = GetResponseFromUser("Token?");
                 File.WriteAllText("SecretTokenDontLOOK.TOKEN", password);
             }
 
-            IrcExample ex = new IrcExample();
-            ex.Connect(WriteLine);
+            string channel = "#theonlysykan";
+
+            if (string.IsNullOrEmpty(channel))
+                channel = username; // join own channel.
+
+            var ex = new IrcExample();
+            ex.Connect(WriteLine, channel);
 
             while (true)
             {
-                String WriteMessage = Console.ReadLine();
-                ex.client.SendMessage(WriteMessage, "#theonlysykan");
+                var writeMessage = Console.ReadLine();
+                if (writeMessage?.Trim() == "q")
+                    break;
+                if (writeMessage?.Trim() != string.Empty)
+                    ex.Client.SendMessage(writeMessage, channel);
             }
-
         }
-        
-        static private String GetResponseFromUser(String p_question)
+
+        private static string GetResponseFromUser(string pQuestion)
         {
-            Console.WriteLine(p_question);
+            Console.WriteLine(pQuestion);
             return Console.ReadLine();
         }
 
-        static SpeechSynthesizer _synth;
-        static ReadOnlyCollection<InstalledVoice> _voices;
-        static int index = 0;
-        static int maxLengthSoFar = int.MinValue;
-        static int minLengthSoFar = int.MaxValue;
-        static private void WriteLine(String p_username, String p_text)
+//        static SpeechSynthesizer _synth;
+//        static ReadOnlyCollection<InstalledVoice> _voices;
+//        static int _index = 0;
+        public static int MaxLengthSoFar { get; private set; } = -256;
+        public static int MinLengthSoFar { get; private set; } = 256;
+
+        private static void WriteLine(string pUsername, string pText)
         {
-            if (p_username.Contains("bot"))
+            if (pUsername.Contains("bot"))
                 return;
 
-            var words = p_text.Split(' ').ToArray();
+            var words = pText.Split(' ').ToArray();
             for (int i = 0; i < words.Length; i++)
             {
-                if (words[i].Contains("http"))
+                if (words[i].ToLower().Contains("http"))
                 {
-                    words[i] = String.Empty;
+                    words[i] = string.Empty;
                 }
             }
-            p_text = String.Join(" ",words);
+            pText = string.Join(" ", words);
 
+            if (pUsername.Length > MaxLengthSoFar)
+                MaxLengthSoFar = pUsername.Length;
 
-            if (p_username.Length > maxLengthSoFar)
-                maxLengthSoFar = p_username.Length;
-
-            if (p_username.Length < minLengthSoFar)
-                minLengthSoFar = p_username.Length;
+            if (pUsername.Length < MinLengthSoFar)
+                MinLengthSoFar = pUsername.Length;
 
             SyncPool.Init();
 
-            ThreadPool.QueueUserWorkItem(new WaitCallback((x) => { SyncPool.SpeakText(p_username, p_text); }));
+            ThreadPool.QueueUserWorkItem(x => { SyncPool.SpeakText(pUsername, pText); });
 
-            Console.WriteLine(p_text);
+            string hour = FormatTime(DateTime.Now.Hour);
+            string minutes = FormatTime(DateTime.Now.Minute);
+            // default color
+            //            Console.WriteLine($"{hour}:{minutes} - {pUsername}: {pText}");
+
+            // color coded for readability.
+            // Time
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write($"{hour}:{minutes}");
+            // Spacer
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($" - ");
+            // Username
+            // TODO: Add some Color Randomization based off username
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write(pUsername);
+            // Spacer
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($": ");
+            // Message
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(pText);
         }
 
-
-
+        private static string FormatTime(int i)
+        {
+            return (i > 9 ? "" : "0") + i;
+        }
     }
 }
