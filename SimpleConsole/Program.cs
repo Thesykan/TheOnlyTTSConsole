@@ -73,7 +73,8 @@ namespace SimpleConsole
 
             ThreadPool.QueueUserWorkItem(x => { SyncPool.SpeakText(pUsername, pText); });
 
-            Console.WriteLine(pText);
+            string time = $"{DateTime.Now.Hour}:{DateTime.Now.Minute}";
+            Console.WriteLine($"{time} - {pUsername}: {pText}");
         }
     }
 }
