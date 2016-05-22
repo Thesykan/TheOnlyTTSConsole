@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleConsole
@@ -44,9 +45,11 @@ namespace SimpleConsole
         //Handle Incoming IRC Messages
         public static bool HandleMessages(String pUserName, String pMessage)
         {
+            pMessage = pMessage.ToLower();
+
             var result = false;
             //New Polls?
-            var split = pMessage.Split(new String[] { "!NewPoll" }, StringSplitOptions.None);
+            var split = pMessage.Split(new String[] { "!newpoll" }, StringSplitOptions.None);
             if(split.Length> 1)
             {
                 //New Poll Detected.
@@ -76,7 +79,7 @@ namespace SimpleConsole
             }
 
             //End Polls?
-            var split2 = pMessage.Split(new String[] { "!EndPoll" }, StringSplitOptions.None);
+            var split2 = pMessage.Split(new String[] { "!endpoll" }, StringSplitOptions.None);
             if (split2.Length > 1)
             {
                 var poll = ActivePolls.Where(w => split2[1].Contains(w.PollName)).FirstOrDefault();
@@ -98,12 +101,11 @@ namespace SimpleConsole
 
             foreach (var poll in ActivePolls)
             {
-                if(poll.HandleMessages(pUserName, pMessage.ToLower()))
+                if(poll.HandleMessages(pUserName, pMessage))
                 {
                     result = true;
                 }
             }
-
             return result;
         }
 
@@ -112,6 +114,24 @@ namespace SimpleConsole
         {
             ActivePolls = new List<Poll>();
             _messageSend = pIrcConnect;
+
+            Thread thread = new Thread(new ThreadStart(VoteThread));
+        }
+
+        public static void VoteThread()
+        {
+            while (true)
+            {
+                Poll[] pollArray = ActivePolls.ToArray();
+                for (int i = 0; i < pollArray.Length; i++)
+                {
+                    if (pollArray[i].TimesUp())
+                    {
+                        var msg = EndPoll(pollArray[i]);
+                        _messageSend(msg);
+                    }
+                }
+            }
         }
     }
 
@@ -137,15 +157,24 @@ namespace SimpleConsole
         public List<PollOption> Options; // 1 Or 2 Or 3
         public List<String> Commands; //!Poll Or !P 
         public List<String> EnteredUsers;
+        public DateTime EndPollTime;
 
         private bool _Active = false;
         public void Start()
         {
             _Active = true;
+            EndPollTime = DateTime.Now.AddMinutes(10);
         }
         public void End()
         {
             _Active = false;
+        }
+
+        public bool TimesUp()
+        {
+            if(EndPollTime == null)
+                return true;
+            return (DateTime.Now > EndPollTime);
         }
 
         public String GetResults()
