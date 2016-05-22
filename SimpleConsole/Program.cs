@@ -11,9 +11,11 @@ namespace SimpleConsole
     {
         private static void Main(string[] args)
         {
+            string username = string.Empty;
+
             if (!File.Exists("Username.USER"))
             {
-                var username = GetResponseFromUser("UserName?");
+                username = GetResponseFromUser("UserName?");
                 File.WriteAllText("Username.USER", username);
             }
 
@@ -23,8 +25,12 @@ namespace SimpleConsole
                 File.WriteAllText("SecretTokenDontLOOK.TOKEN", password);
             }
 
+
+            if (string.IsNullOrEmpty(channel))
+                channel = username; // join own channel.
+
             var ex = new IrcExample();
-            ex.Connect(WriteLine);
+            ex.Connect(WriteLine, channel);
 
             while (true)
             {
@@ -32,7 +38,7 @@ namespace SimpleConsole
                 if (writeMessage?.Trim() == "q")
                     break;
                 if (writeMessage?.Trim() != string.Empty)
-                    ex.Client.SendMessage(writeMessage, "#theonlysykan");
+                    ex.Client.SendMessage(writeMessage, channel);
             }
         }
 
@@ -73,22 +79,33 @@ namespace SimpleConsole
 
             ThreadPool.QueueUserWorkItem(x => { SyncPool.SpeakText(pUsername, pText); });
 
-            string hour = (DateTime.Now.Hour > 9 ? "" : "0") + DateTime.Now.Hour;
-            string minutes = (DateTime.Now.Minute > 9 ? "" : "0") + DateTime.Now.Minute;
+            string hour = FormatTime(DateTime.Now.Hour);
+            string minutes = FormatTime(DateTime.Now.Minute);
             // default color
             //            Console.WriteLine($"{hour}:{minutes} - {pUsername}: {pText}");
 
             // color coded for readability.
+            // Time
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.Write($"{hour}:{minutes}");
+            // Spacer
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write($" - ");
+            // Username
+            // TODO: Add some Color Randomization based off username
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.Write(pUsername);
+            // Spacer
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write($": ");
+            // Message
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine(pText);
+        }
+
+        private static string FormatTime(int i)
+        {
+            return (i > 9 ? "" : "0") + i;
         }
     }
 }
