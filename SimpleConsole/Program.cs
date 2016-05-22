@@ -7,8 +7,14 @@ public delegate void StringInput(string pUsername, string pInput);
 
 namespace SimpleConsole
 {
+    public delegate void SendIRCMessage(String pMessage, String pChannel = null);
+
     internal class Program
     {
+
+        static string _channel = "#theonlysykan";
+        static IRCClient IRCClient = new IRCClient();
+
         private static void Main(string[] args)
         {
             string username = string.Empty;
@@ -25,21 +31,42 @@ namespace SimpleConsole
                 File.WriteAllText("SecretTokenDontLOOK.TOKEN", password);
             }
 
-            string channel = "#theonlysykan";
+            if (string.IsNullOrEmpty(_channel))
+                _channel = username; // join own channel.
 
-            if (string.IsNullOrEmpty(channel))
-                channel = username; // join own channel.
+            IRCClient.Connect(WriteToConsole, _channel);
 
-            var ex = new IrcExample();
-            ex.Connect(WriteLine, channel);
+            VoteSystem.Init(SendIRCMessage);
 
             while (true)
             {
-                var writeMessage = Console.ReadLine();
-                if (writeMessage?.Trim() == "q")
-                    break;
-                if (writeMessage?.Trim() != string.Empty)
-                    ex.Client.SendMessage(writeMessage, channel);
+                try
+                {
+                    var writeMessage = Console.ReadLine();
+                    if (writeMessage?.Trim() == "q")
+                        break;
+                    if (writeMessage?.Trim() != string.Empty)
+                        SendIRCMessage(writeMessage);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log(ex.ToString());
+                }
+            }
+        }
+
+        private static void SendIRCMessage(String pMessage, String pChannel = null)
+        {
+            try
+            {
+                if (pChannel == null)
+                    IRCClient.Client.SendMessage(pMessage, _channel);
+                else
+                    IRCClient.Client.SendMessage(pMessage, pChannel);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(ex.ToString());
             }
         }
 
@@ -55,12 +82,12 @@ namespace SimpleConsole
         public static int MaxLengthSoFar { get; private set; } = -256;
         public static int MinLengthSoFar { get; private set; } = 256;
 
-        private static void WriteLine(string pUsername, string pText)
+        private static void WriteToConsole(string pUsername, string pMessage)
         {
             if (pUsername.Contains("bot"))
                 return;
 
-            var words = pText.Split(' ').ToArray();
+            var words = pMessage.Split(' ').ToArray();
             for (int i = 0; i < words.Length; i++)
             {
                 if (words[i].ToLower().Contains("http"))
@@ -68,7 +95,7 @@ namespace SimpleConsole
                     words[i] = string.Empty;
                 }
             }
-            pText = string.Join(" ", words);
+            pMessage = string.Join(" ", words);
 
             if (pUsername.Length > MaxLengthSoFar)
                 MaxLengthSoFar = pUsername.Length;
@@ -78,7 +105,16 @@ namespace SimpleConsole
 
             SyncPool.Init();
 
-            ThreadPool.QueueUserWorkItem(x => { SyncPool.SpeakText(pUsername, pText); });
+            bool SpeakText = true;
+
+            if (VoteSystem.HandleMessages(pUsername, pMessage))
+                SpeakText = false;
+
+            if (UserManager.IsSpeachBannedUser(pUsername))
+                SpeakText = false;
+
+            if (SpeakText)
+                ThreadPool.QueueUserWorkItem(x => { SyncPool.SpeakText(pUsername, pMessage); });
 
             string hour = FormatTime(DateTime.Now.Hour);
             string minutes = FormatTime(DateTime.Now.Minute);
@@ -101,7 +137,7 @@ namespace SimpleConsole
             Console.Write($": ");
             // Message
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine(pText);
+            Console.WriteLine(pMessage);
         }
 
         private static string FormatTime(int i)

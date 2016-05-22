@@ -13,3 +13,5 @@ New Features:
 Future:
 -Remake as WPF Add for EMOTES
 -Mini Game in Chat. (Kinda Text Adventure). D&D Style
+
+-Make Bot Account

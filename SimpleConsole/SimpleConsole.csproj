@@ -50,9 +50,12 @@
   <ItemGroup>
     <Compile Include="GetAuthToken.cs" />
     <Compile Include="IrcExample.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sync.cs" />
+    <Compile Include="UserManager.cs" />
+    <Compile Include="VoteSystem.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

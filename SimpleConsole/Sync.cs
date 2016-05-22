@@ -110,7 +110,15 @@ namespace SimpleConsole
             if (_index >= _voices.Count)
                 _index = 0;
 
-            Synth.SelectVoice(_voices[_index].VoiceInfo.Name);
+            try
+            {
+                var voice = _voices[_index];
+                Synth.SelectVoice(voice.VoiceInfo.Name);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(ex.ToString());
+            }
         }
 
         public void SetRate(string pUsername, string pMessage)
