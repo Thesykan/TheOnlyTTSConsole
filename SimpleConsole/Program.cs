@@ -33,6 +33,7 @@ namespace SimpleConsole
                     break;
                 if(writeMessage?.Trim() != string.Empty)
                     ex.Client.SendMessage(writeMessage, "#theonlysykan");
+                Thread.Sleep(100);
             }
         }
 
