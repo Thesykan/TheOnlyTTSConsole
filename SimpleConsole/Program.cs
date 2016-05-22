@@ -120,6 +120,30 @@ namespace SimpleConsole
             string minutes = FormatTime(DateTime.Now.Minute);
             // default color
             //            Console.WriteLine($"{hour}:{minutes} - {pUsername}: {pText}");
+            int viewers = TwitchAPI.GetNumberOfViewers();
+            int followers = TwitchAPI.GetNumberOfFollowers();
+            String uptime = TwitchAPI.GetUpdateTime();
+
+            // UpTime
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Write($"{uptime}");
+            // Spacer
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($" - ");
+
+            // Followers
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Write($"{followers}");
+            // Spacer
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($" - ");
+
+            // Viewers
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Write($"{viewers}");
+            // Spacer
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($" - ");
 
             // color coded for readability.
             // Time
