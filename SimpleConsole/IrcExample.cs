@@ -12,6 +12,9 @@ namespace SimpleConsole
             var username = File.ReadAllText("Username.USER");
             var password = File.ReadAllText("SecretTokenDontLOOK.TOKEN");
 
+            if (!password.ToLower().Contains("oauth:"))
+                password = "oauth:" + password;
+
             Client = new IrcClient("irc.chat.twitch.tv:6667",
                 new IrcUser(username, username, password));
 
