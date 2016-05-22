@@ -31,7 +31,7 @@ namespace SimpleConsole
                 var writeMessage = Console.ReadLine();
                 if (writeMessage?.Trim() == "q")
                     break;
-                if(writeMessage?.Trim() != string.Empty)
+                if (writeMessage?.Trim() != string.Empty)
                     ex.Client.SendMessage(writeMessage, "#theonlysykan");
             }
         }
@@ -56,7 +56,7 @@ namespace SimpleConsole
             var words = pText.Split(' ').ToArray();
             for (int i = 0; i < words.Length; i++)
             {
-                if (words[i].Contains("http"))
+                if (words[i].ToLower().Contains("http"))
                 {
                     words[i] = string.Empty;
                 }
@@ -73,8 +73,22 @@ namespace SimpleConsole
 
             ThreadPool.QueueUserWorkItem(x => { SyncPool.SpeakText(pUsername, pText); });
 
-            string time = $"{DateTime.Now.Hour}:{DateTime.Now.Minute}";
-            Console.WriteLine($"{time} - {pUsername}: {pText}");
+            string hour = (DateTime.Now.Hour > 9 ? "" : "0") + DateTime.Now.Hour;
+            string minutes = (DateTime.Now.Minute > 9 ? "" : "0") + DateTime.Now.Minute;
+            // default color
+            //            Console.WriteLine($"{hour}:{minutes} - {pUsername}: {pText}");
+
+            // color coded for readability.
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write($"{hour}:{minutes}");
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($" - ");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write(pUsername);
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($": ");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine(pText);
         }
     }
 }
