@@ -196,12 +196,14 @@ namespace SimpleConsole
             List<PollOption> SameCountAsWinner = new List<PollOption>();
             foreach (var option in Options)
             {
-                if (Winner == null)
-                    Winner = option;
-
                 result += option.Name + " has " + option.Users.Count + " Votes, " + ReturnChar;
 
-                if (option.Users.Count > Winner.Users.Count)
+                if (Winner == null)
+                {
+                    Winner = option;
+                    SameCountAsWinner = new List<PollOption>();
+                }
+                else if (option.Users.Count > Winner.Users.Count)
                 {
                     Winner = option;
                     SameCountAsWinner = new List<PollOption>();
