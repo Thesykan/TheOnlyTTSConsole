@@ -11,8 +11,7 @@ namespace SimpleConsole
 
     internal class Program
     {
-
-        static string _channel = "#timthetatman";
+        public static string _channel = "#g96k";
         static IRCClient IRCClient = new IRCClient();
 
         private static void Main(string[] args)

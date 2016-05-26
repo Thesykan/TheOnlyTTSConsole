@@ -20,7 +20,7 @@ namespace SimpleConsole
 
             _readyStateSyncQueue = new Queue<Sync>();
             _syncList = new List<Sync> { new Sync(Queue) { pan = -1 }, new Sync(Queue) { pan = 1 } };
-            _readyThread = new Thread(new ThreadStart(() => SpeechThread()));
+            _readyThread = new Thread(SpeechThread);
             _readyThread.Start();
         }
 
@@ -174,7 +174,6 @@ namespace SimpleConsole
 
         public void SetRate(string pUsername, string pMessage)
         {
-            // ReSharper disable once PossibleLossOfFraction
             var n1 = (float)(pUsername.Length / Program.MaxLengthSoFar);
             var n2 = n1 * 2;
             var n3 = n2 - 1;
@@ -221,7 +220,7 @@ namespace SimpleConsole
             }
 
             AudioStream = new MemoryStream();
-            Synth.SetOutputToAudioStream(AudioStream, new SpeechAudioFormatInfo(44100, AudioBitsPerSample.Sixteen, AudioChannel.Stereo) { });
+            Synth.SetOutputToAudioStream(AudioStream, new SpeechAudioFormatInfo(44100, AudioBitsPerSample.Sixteen, AudioChannel.Stereo));
         }
 
 

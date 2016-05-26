@@ -26,7 +26,7 @@ namespace SimpleConsole
         /// <summary>
         /// End Poll and Get Results
         /// </summary>
-        /// <param name="pPollId"></param>
+        /// <param name="pPoll"></param>
         /// <returns>String Results</returns>
         public static String EndPoll(Poll pPoll)
         {
@@ -82,7 +82,7 @@ namespace SimpleConsole
             var split2 = pMessage.Split(new String[] { "!endpoll" }, StringSplitOptions.None);
             if (split2.Length > 1)
             {
-                var poll = ActivePolls.Where(w => split2[1].Contains(w.PollName)).FirstOrDefault();
+                var poll = ActivePolls.FirstOrDefault(w => split2[1].Contains(w.PollName));
 
                 //New Poll Detected.
                 if (poll != null)
@@ -202,8 +202,10 @@ namespace SimpleConsole
                 {
                     Winner = option;
                     SameCountAsWinner = new List<PollOption>();
+                    continue;
                 }
-                else if (option.Users.Count > Winner.Users.Count)
+
+                if (option.Users.Count > Winner.Users.Count)
                 {
                     Winner = option;
                     SameCountAsWinner = new List<PollOption>();
