@@ -1,7 +1,4 @@
 ﻿
-Known Bugs:
--Fix Sync Queue to be thread safe.
-
 
 New Features:
 -Voting for Timeout/PermaBan/Sync Voice Customization/Lexicons

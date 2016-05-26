@@ -12,7 +12,7 @@ namespace SimpleConsole
     internal class Program
     {
 
-        static string _channel = "#theonlysykan";
+        static string _channel = "#timthetatman";
         static IRCClient IRCClient = new IRCClient();
 
         private static void Main(string[] args)
@@ -113,8 +113,11 @@ namespace SimpleConsole
             if (UserManager.IsSpeachBannedUser(pUsername))
                 SpeakText = false;
 
+            if (pMessage.Trim().StartsWith("!"))
+                SpeakText = false;
+
             if (SpeakText)
-                ThreadPool.QueueUserWorkItem(x => { SyncPool.SpeakText(pUsername, pMessage); });
+                SyncPool.SpeakText(pUsername, pMessage);
 
             string hour = FormatTime(DateTime.Now.Hour);
             string minutes = FormatTime(DateTime.Now.Minute);

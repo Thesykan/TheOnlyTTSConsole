@@ -13,7 +13,7 @@ namespace SimpleConsole
     {
 
         private static DateTime _viewCheck = DateTime.MinValue;
-        private static StreamInfo info;
+        private static TW_StreamInfo info;
         private static bool _checking = false;
         public static int GetNumberOfViewers()
         {
@@ -105,7 +105,7 @@ namespace SimpleConsole
                 var responseStream = response.GetResponseStream();
                 var StreamReader = new StreamReader(responseStream);
                 var text = StreamReader.ReadToEnd();
-                var twitchObj = JsonConvert.DeserializeObject<StreamInfo>(text);
+                var twitchObj = JsonConvert.DeserializeObject<TW_StreamInfo>(text);
                 response.Close();
 
                 info = twitchObj;//.stream.viewers;
@@ -121,19 +121,19 @@ namespace SimpleConsole
 
 
 
-    public class StreamInfo
+    public class TW_StreamInfo
     {
-        public Stream stream;
+        public TW_Stream stream;
     }
 
-    public class Stream
+    public class TW_Stream
     {
         public int viewers;
         public DateTime created_at;
-        public Channel channel;
+        public TW_Channel channel;
     }
     
-    public class Channel
+    public class TW_Channel
     {
         public int followers;
     }

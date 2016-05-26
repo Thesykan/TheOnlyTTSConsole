@@ -12,8 +12,10 @@ namespace SimpleConsole
         static StreamWriter _logStream;
         static Logger()
         {
-            var date = DateTime.Now.ToShortDateString();
-            var file = File.Open(date+".log", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+            var filename = Path.GetFullPath(DateTime.Now.ToShortDateString() + ".log");
+            if (!Directory.Exists(Path.GetDirectoryName(filename)))
+                Directory.CreateDirectory(Path.GetDirectoryName(filename));
+            var file = File.Open(filename + ".log", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
             file.Seek(0, SeekOrigin.End);
 
             _logStream = new StreamWriter(file);
