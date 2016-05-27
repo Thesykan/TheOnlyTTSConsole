@@ -25,18 +25,17 @@ namespace SimpleConsole
 
             if (_checking)
             {
+                return info.stream?.viewers ?? 0;
+            }
+
+            if ((DateTime.Now - _viewCheck).TotalMinutes < 5)
+            {
                 return info.stream.viewers;
             }
-            else
-            {
-                if((DateTime.Now - _viewCheck).TotalMinutes < 5)
-                {
-                    return info.stream.viewers;
-                }
-                _viewCheck = DateTime.Now;
-                _checking = true;
-            }
-            return info.stream.viewers;
+            _viewCheck = DateTime.Now;
+            _checking = true;
+
+            return info.stream?.viewers ?? 0;
         }
 
         public static int GetNumberOfFollowers()
@@ -49,7 +48,7 @@ namespace SimpleConsole
 
             if (_checking)
             {
-                return info.stream.channel.followers;
+                return info.stream?.channel.followers ?? 0;
             }
             else
             {
@@ -60,7 +59,7 @@ namespace SimpleConsole
                 _viewCheck = DateTime.Now;
                 _checking = true;
             }
-            return info.stream.channel.followers;
+            return info.stream?.channel.followers ?? 0;
         }
 
         public static String GetUpdateTime()
@@ -68,7 +67,7 @@ namespace SimpleConsole
             if (info == null)
             {
                 UpdateTwitchVariables();
-                return "";
+                return "hh:mm";
             }
             //return "";
             try
@@ -77,7 +76,7 @@ namespace SimpleConsole
             }
             catch (Exception ex)
             {
-                return "";
+                return "hh:mm";
             }
         }
 
@@ -86,8 +85,11 @@ namespace SimpleConsole
         {
             try
             {
+                // Stripping # from channel name for API calls
+                string channel = Program._channel.Replace("#", "");
+
                 //https://api.twitch.tv/kraken/streams/theonlysykan
-                WebRequest request = WebRequest.Create("https://api.twitch.tv/kraken/streams/theonlysykan");
+                WebRequest request = WebRequest.Create("https://api.twitch.tv/kraken/streams/" + channel);
                 var response = request.GetResponseAsync();
                 response.ContinueWith(RequestComplete);
             }
@@ -103,8 +105,8 @@ namespace SimpleConsole
             {
                 var response = obj.Result;
                 var responseStream = response.GetResponseStream();
-                var StreamReader = new StreamReader(responseStream);
-                var text = StreamReader.ReadToEnd();
+                var streamReader = new StreamReader(responseStream);
+                var text = streamReader.ReadToEnd();
                 var twitchObj = JsonConvert.DeserializeObject<TW_StreamInfo>(text);
                 response.Close();
 
