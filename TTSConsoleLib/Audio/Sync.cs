@@ -13,7 +13,6 @@ namespace TTSConsoleLib.Audio
 {
     internal class SyncPool
     {
-        public static int MaxLengthSoFar = 0;
 
         private static List<Sync> _syncList;
 
@@ -54,8 +53,12 @@ namespace TTSConsoleLib.Audio
             Sync synth = null;
             try
             {
-                var split = pText.Split(' ').ToList().Distinct().ToArray();
-                pText = String.Join(" ", split);
+
+                if (pText.Length > 230)
+                {
+                    var split = pText.Split(' ').ToList().Distinct().ToArray();
+                    pText = String.Join(" ", split);
+                }
 
                 while (true)
                 {
@@ -85,9 +88,9 @@ namespace TTSConsoleLib.Audio
                 synth.Speak(pText);
 
             }
-            catch
+            catch(Exception ex)
             {
-
+                Logger.Log(ex.ToString());
             }
             finally
             {
@@ -175,9 +178,13 @@ namespace TTSConsoleLib.Audio
             }
         }
 
+        private static int MaxLengthSoFar = 1;
         public void SetRate(string pUsername, string pMessage)
         {
-            var n1 = (float)(pUsername.Length / SyncPool.MaxLengthSoFar);
+            if (pUsername.Length > MaxLengthSoFar)
+                MaxLengthSoFar = pUsername.Length;
+
+            var n1 = (float)(pUsername.Length / MaxLengthSoFar);
             var n2 = n1 * 2;
             var n3 = n2 - 1;
             var n4 = n3 * 5;

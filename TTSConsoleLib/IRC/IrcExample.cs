@@ -22,7 +22,10 @@ namespace TTSConsoleLib.IRC
             IRC_Client = new IrcClient("irc.chat.twitch.tv:6667",
                 new IrcUser(username, username, password));
 
-            IRC_Client.ConnectionComplete += (s, e) => { IRC_Client.JoinChannel(pChannel); };
+            IRC_Client.ConnectionComplete += (s, e) => 
+            {
+                IRC_Client.JoinChannel(pChannel);
+            };
 
             IRC_Client.ChannelMessageRecieved += (s, e) =>
             {

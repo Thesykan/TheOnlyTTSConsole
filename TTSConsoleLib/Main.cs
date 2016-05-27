@@ -15,6 +15,7 @@ namespace TTSConsoleLib
     public delegate String QuestionUser(String pMessage);
     public delegate void WriteLineToUser(String pMessage);
     public delegate void WriteToUser(String pMessage, ConsoleColor pColor);
+    public delegate void HandleUserInput(String pUserName, String pMessage);
 
     public class Main
     {
@@ -27,12 +28,15 @@ namespace TTSConsoleLib
             Write = pWriteMethod;
             WriteLine = pWriteLineMethod;
 
-            string _userName = string.Empty;
-
+            string userName = string.Empty;
             if (!File.Exists("Username.USER"))
             {
-                _userName = pMethod("UserName?");
-                File.WriteAllText("Username.USER", _userName);
+                userName = pMethod("UserName?");
+                File.WriteAllText("Username.USER", userName);
+            }
+            else
+            {
+                userName = File.ReadAllText("Username.USER");
             }
 
             if (!File.Exists("SecretTokenDontLOOK.TOKEN"))
@@ -42,11 +46,11 @@ namespace TTSConsoleLib
             }
 
             if (string.IsNullOrEmpty(Twitch.TwitchAPI._channel))
-                Twitch.TwitchAPI._channel = _userName; // join own channel.
+                Twitch.TwitchAPI._channel = "#"+userName; // join own channel.
 
             IRCClient.Connect(WriteToConsole, Twitch.TwitchAPI._channel);
 
-            //VoteSystem.Init(SendIRCMessage);
+            VoteSystem.Init(WriteToConsole);
 
             while (true)
             {
@@ -56,7 +60,10 @@ namespace TTSConsoleLib
                     if (writeMessage?.Trim() == "q")
                         break;
                     if (writeMessage?.Trim() != string.Empty)
-                        WriteToConsole(_userName, writeMessage);
+                    {
+                        IRCClient.SendIRCMessage(writeMessage);
+                        WriteToConsole(userName, writeMessage);
+                    }
                 }
                 catch (Exception ex)
                 {

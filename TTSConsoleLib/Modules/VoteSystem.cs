@@ -69,13 +69,13 @@ namespace TTSConsoleLib.Modules
 
                     var Options = String.Join(" OR ", nameAndOptions, 1, nameAndOptions.Length - 1);
 
-                    _messageSend(name + " Poll Created!!!");
-                    _messageSend("Type !" + name + " and one of these options [" + Options + "] to vote");
+                    PrintMessage(name + " Poll Created!!!");
+                    PrintMessage("Type !" + name + " and one of these options [" + Options + "] to vote");
                     result = true;
                 }
                 else
                 {
-                    _messageSend("Not Enough Poll Options >.<");
+                    PrintMessage("Not Enough Poll Options >.<");
                     //Print Angry Message
                 }
             }
@@ -90,12 +90,12 @@ namespace TTSConsoleLib.Modules
                 if (poll != null)
                 {
                     var msg = EndPoll(poll);
-                    _messageSend(msg);
+                    PrintMessage(msg);
                     result = true;
                 }
                 else
                 {
-                    _messageSend("Poll Not Found >.<");
+                    PrintMessage("Poll Not Found >.<");
                     //Print Angry Message
                 }
             }
@@ -111,13 +111,18 @@ namespace TTSConsoleLib.Modules
             return result;
         }
 
-        private static SendIRCMessage _messageSend;
-        public static void Init(SendIRCMessage pIrcConnect)
+        private static HandleUserInput HandleSystemMessage;
+        public static void Init(HandleUserInput pInput)
         {
             ActivePolls = new List<Poll>();
-            _messageSend = pIrcConnect;
-
+            HandleSystemMessage = pInput;
             Thread thread = new Thread(new ThreadStart(VoteThread));
+        }
+
+        public static void PrintMessage(String pMessage)
+        {
+            IRC.IRCClient.SendIRCMessage(pMessage);
+            HandleMessages("~System~", pMessage);
         }
 
         public static void VoteThread()
@@ -130,7 +135,7 @@ namespace TTSConsoleLib.Modules
                     if (pollArray[i].TimesUp())
                     {
                         var msg = EndPoll(pollArray[i]);
-                        _messageSend(msg);
+                        PrintMessage(msg);
                     }
                 }
             }

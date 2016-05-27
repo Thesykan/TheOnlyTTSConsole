@@ -30,7 +30,7 @@ namespace SimpleConsole
         private static void Write(String pOuput, ConsoleColor pColor)
         {
             Console.ForegroundColor = pColor;
-            Console.WriteLine(pOuput);
+            Console.Write(pOuput);
         }
     }
 }

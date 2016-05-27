@@ -5,7 +5,6 @@ BUGS:
 
 
 New Features:
--Change to Class Library.
 -Channal Selection.
 -Voting for Timeout/PermaBan/Sync Voice Customization/Lexicons
 	-Show Active Polls
