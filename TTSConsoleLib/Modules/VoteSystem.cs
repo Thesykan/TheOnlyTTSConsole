@@ -5,8 +5,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SimpleConsole
+namespace TTSConsoleLib.Modules
 {
+    public delegate void SendIRCMessage(String pMessage, String pChannel = null);
+
     public class VoteSystem
     {
         public static List<Poll> ActivePolls;

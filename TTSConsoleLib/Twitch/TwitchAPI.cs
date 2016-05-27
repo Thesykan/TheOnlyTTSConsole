@@ -6,11 +6,14 @@ using System.Threading.Tasks;
 using System.Net;
 using Newtonsoft.Json;
 using System.IO;
+using TTSConsoleLib.Utils;
 
-namespace SimpleConsole
+namespace TTSConsoleLib.Twitch
 {
     public class TwitchAPI
     {
+        public static String _channel = String.Empty;
+
 
         private static DateTime _viewCheck = DateTime.MinValue;
         private static TW_StreamInfo info;
@@ -86,7 +89,7 @@ namespace SimpleConsole
             try
             {
                 // Stripping # from channel name for API calls
-                string channel = Program._channel.Replace("#", "");
+                string channel = _channel.Replace("#", "");
 
                 //https://api.twitch.tv/kraken/streams/theonlysykan
                 WebRequest request = WebRequest.Create("https://api.twitch.tv/kraken/streams/" + channel);

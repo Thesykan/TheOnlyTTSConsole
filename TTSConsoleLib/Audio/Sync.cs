@@ -7,11 +7,14 @@ using System.Speech.AudioFormat;
 using System.IO;
 using NAudio.Wave;
 using System.Linq;
+using TTSConsoleLib.Utils;
 
-namespace SimpleConsole
+namespace TTSConsoleLib.Audio
 {
     internal class SyncPool
     {
+        public static int MaxLengthSoFar = 0;
+
         private static List<Sync> _syncList;
 
         public static void Init()
@@ -174,7 +177,7 @@ namespace SimpleConsole
 
         public void SetRate(string pUsername, string pMessage)
         {
-            var n1 = (float)(pUsername.Length / Program.MaxLengthSoFar);
+            var n1 = (float)(pUsername.Length / SyncPool.MaxLengthSoFar);
             var n2 = n1 * 2;
             var n3 = n2 - 1;
             var n4 = n3 * 5;
