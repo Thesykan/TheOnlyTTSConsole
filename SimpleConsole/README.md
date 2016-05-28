@@ -1,8 +1,6 @@
 ﻿
 BUGS:
--Stuff Writen into console does not activate Commands.
--Reponses from commands don't print out in console
-
+- NO BUGS?
 
 New Features:
 -Channal Selection.
@@ -14,6 +12,9 @@ New Features:
 -Add Usernames and Timestamps to console.
 -Add Stay on top window feature.
 -Language Recognition
+-Adding Lexicons for Username through chat command.
+-Adding Voice Selection through chat command.
+
 
 
 Future:

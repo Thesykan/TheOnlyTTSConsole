@@ -97,6 +97,9 @@ namespace TTSConsoleLib
             if (UserManager.IsSpeachBannedUser(pUsername))
                 SpeakText = false;
 
+            if (UserManager.HandleMessages(pUsername, pMessage))
+                SpeakText = false;
+
             if (pMessage.Trim().StartsWith("!"))
                 SpeakText = false;
 
