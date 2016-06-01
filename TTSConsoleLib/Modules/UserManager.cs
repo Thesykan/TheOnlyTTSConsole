@@ -32,16 +32,23 @@ namespace TTSConsoleLib.Modules
                     var split = pMessage.Split(new String[] { "!voice" }, StringSplitOptions.None);
                     if (split.Length > 1)
                     {
-                        var user = ListOfUserSettings.FirstOrDefault(x => x.UserName == pUserName);
-                        if (user != null)
+                        if (String.IsNullOrEmpty(split[1]))
                         {
-                            user.Voice = split[1];
+                            PrintMessage("!Avaliable Voices are: " + String.Join(",", Sync.voiceArray));
                         }
                         else
                         {
-                            ListOfUserSettings.Add(new UserSettings() { UserName = pUserName, Voice = split[1] });
+                            var user = ListOfUserSettings.FirstOrDefault(x => x.UserName == pUserName);
+                            if (user != null)
+                            {
+                                user.Voice = split[1];
+                            }
+                            else
+                            {
+                                ListOfUserSettings.Add(new UserSettings() { UserName = pUserName, Voice = split[1] });
+                            }
+                            SaveSettings();
                         }
-                        SaveSettings();
                     }
                 }
 
@@ -72,11 +79,29 @@ namespace TTSConsoleLib.Modules
             }
         }
 
+        private static HandleUserInput HandleSystemMessage;
+        public static void Init(HandleUserInput pInput)
+        {
+            HandleSystemMessage = pInput;
+        }
+        private static void PrintMessage(String pMessage)
+        {
+            IRC.IRCClient.SendIRCMessage(pMessage);
+            HandleMessages("~System~", pMessage);
+        }
+
+
         public static List<UserSettings> GetUserSettings()
         {
             LoadSettings();
             return ListOfUserSettings;
         }
+        public static UserSettings GetUserSettings(String pUserName)
+        {
+            LoadSettings();
+            return ListOfUserSettings.FirstOrDefault(w=>w.UserName == pUserName);
+        }
+
 
         private static void LoadSettings()
         {

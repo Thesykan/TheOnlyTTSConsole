@@ -55,6 +55,7 @@
     <Compile Include="Audio\Sync.cs" />
     <Compile Include="IRC\IrcExample.cs" />
     <Compile Include="Main.cs" />
+    <Compile Include="Modules\SoundSystem.cs" />
     <Compile Include="Modules\UserManager.cs" />
     <Compile Include="Modules\VoteSystem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

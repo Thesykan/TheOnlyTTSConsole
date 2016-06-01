@@ -45,12 +45,28 @@ namespace TTSConsoleLib
                 File.WriteAllText("SecretTokenDontLOOK.TOKEN", password);
             }
 
-            if (string.IsNullOrEmpty(Twitch.TwitchAPI._channel))
-                Twitch.TwitchAPI._channel = "#"+userName; // join own channel.
+            if (!File.Exists("Channel.JOIN"))
+            {
+                var channel = pMethod("Channel?(Leave blank for your own channel)");
+
+                if (String.IsNullOrEmpty(channel))
+                    channel = "#" + userName;
+
+                if (!channel.StartsWith("#"))
+                    channel = "#" + channel;
+
+                File.WriteAllText("Channel.JOIN", channel);
+                Twitch.TwitchAPI._channel = channel;
+            }
+            else
+            {
+                Twitch.TwitchAPI._channel = File.ReadAllText("Channel.JOIN");
+            }
 
             IRCClient.Connect(WriteToConsole, Twitch.TwitchAPI._channel);
 
             VoteSystem.Init(WriteToConsole);
+            UserManager.Init(WriteToConsole);
 
             while (true)
             {
@@ -77,7 +93,8 @@ namespace TTSConsoleLib
             if (pUsername.Contains("bot"))
                 return;
 
-            var words = pMessage.Split(' ').ToArray();
+            var message = pMessage;
+            var words = message.Split(' ').ToArray();
             for (int i = 0; i < words.Length; i++)
             {
                 if (words[i].ToLower().Contains("http"))
@@ -85,26 +102,29 @@ namespace TTSConsoleLib
                     words[i] = string.Empty;
                 }
             }
-            pMessage = string.Join(" ", words);
+            message = string.Join(" ", words);
 
             SyncPool.Init();
 
             bool SpeakText = true;
 
-            if (VoteSystem.HandleMessages(pUsername, pMessage))
+            if (VoteSystem.HandleMessages(pUsername, message))
                 SpeakText = false;
 
             if (UserManager.IsSpeachBannedUser(pUsername))
                 SpeakText = false;
 
-            if (UserManager.HandleMessages(pUsername, pMessage))
+            if (UserManager.HandleMessages(pUsername, message))
                 SpeakText = false;
 
-            if (pMessage.Trim().StartsWith("!"))
+            if (SoundSystem.HandleMessages(pUsername, pMessage))
+                SpeakText = false;
+
+            if (message.Trim().StartsWith("!"))
                 SpeakText = false;
 
             if (SpeakText)
-                SyncPool.SpeakText(pUsername, pMessage);
+                SyncPool.SpeakText(pUsername, message);
 
             string hour = FormatTime(DateTime.Now.Hour);
             string minutes = FormatTime(DateTime.Now.Minute);

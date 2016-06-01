@@ -48,6 +48,8 @@ namespace TTSConsoleLib.Audio
             }
         }
 
+        private static DateTime _lastUserNameDateTime = DateTime.Now;
+        private static String _lastUserName = String.Empty;
         private static void CreateThread(string pUsername, string pText)
         {
             Sync synth = null;
@@ -59,6 +61,7 @@ namespace TTSConsoleLib.Audio
                     pText = String.Join(" ", split);
                 }
 
+                bool speakUserName = false;
                 while (true)
                 {
                     if (_readyStateSyncQueue.Count > 0)
@@ -67,6 +70,18 @@ namespace TTSConsoleLib.Audio
                         {
                             if (_readyStateSyncQueue.Count > 0)
                             {
+                                if(_lastUserName != pUsername)
+                                {
+                                    _lastUserName = pUsername;
+                                    speakUserName = true;
+                                }
+
+                                if((DateTime.Now - _lastUserNameDateTime).TotalMinutes > 2)
+                                {
+                                    speakUserName = true;
+                                    _lastUserNameDateTime = DateTime.Now;
+                                }
+
                                 synth = _readyStateSyncQueue.Dequeue();
                                 break;
                             }
@@ -77,11 +92,14 @@ namespace TTSConsoleLib.Audio
                     ResetEvent.Reset();
                 }
 
-                synth.Synth.Rate = 2;
-                synth.Synth.Speak(pUsername);
+                if (speakUserName)
+                {
+                    synth.Synth.Rate = 2;
+                    synth.Synth.Speak(pUsername);
+                }
 
                 synth.SetRate(pUsername, pText);
-                synth.RandomVoice();
+                synth.RandomVoice(pUsername);
 
                 // Speak a string.
                 synth.Speak(pText);
@@ -145,6 +163,7 @@ namespace TTSConsoleLib.Audio
         {
 
         }
+        public static String[] voiceArray = new String[0];
 
         private readonly SyncOp _op;
 
@@ -162,6 +181,7 @@ namespace TTSConsoleLib.Audio
 
             Synth.SetOutputToAudioStream(AudioStream, new SpeechAudioFormatInfo(44100, AudioBitsPerSample.Sixteen, AudioChannel.Stereo) { });
             _voices = Synth.GetInstalledVoices();
+            voiceArray = _voices?.Select(s => s.VoiceInfo.Name).ToArray();
 
             _op = pOp;
             _op(this, true);
@@ -169,13 +189,6 @@ namespace TTSConsoleLib.Audio
 
         public void ReloadLexicons()
         {
-            //TODO Remove Old Lexicons
-            //for (int i = LoadedLexicons.Count - 1; i > 0; i++)
-            //{
-            //    Synth.RemoveLexicon(LoadedLexicons[i]);
-            //    LoadedLexicons.Remove(LoadedLexicons[i]);
-            //}
-
             var settings = UserManager.GetUserSettings();
             if (!Directory.Exists("Lexicons"))
             {
@@ -234,20 +247,29 @@ namespace TTSConsoleLib.Audio
         private readonly ReadOnlyCollection<InstalledVoice> _voices;
         private int _index;
 
-        public void RandomVoice()
+        public void RandomVoice(String pUsername)
         {
-            _index++;
-            if (_index >= _voices.Count)
-                _index = 0;
-
-            try
+            var settings = UserManager.GetUserSettings(pUsername);
+            if (settings != null && _voices.Where(w=>w.VoiceInfo.Name.Contains(settings.Voice)).Any())
             {
-                var voice = _voices[_index];
+                var voice = _voices.FirstOrDefault(w => w.VoiceInfo.Name.Contains(settings.Voice));
                 Synth.SelectVoice(voice.VoiceInfo.Name);
             }
-            catch (Exception ex)
+            else
             {
-                Logger.Log(ex.ToString());
+                _index++;
+                if (_index >= _voices.Count)
+                    _index = 0;
+
+                try
+                {
+                    var voice = _voices[_index];
+                    Synth.SelectVoice(voice.VoiceInfo.Name);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log(ex.ToString());
+                }
             }
         }
 
@@ -257,12 +279,13 @@ namespace TTSConsoleLib.Audio
             if (pUsername.Length > MaxLengthSoFar)
                 MaxLengthSoFar = pUsername.Length;
 
-            var n1 = (float)(pUsername.Length / MaxLengthSoFar);
-            var n2 = n1 * 2;
-            var n3 = n2 - 1;
-            var n4 = n3 * 5;
+            //Disable UserName Rate Change... For Now.
+            //var n1 = (float)(pUsername.Length / MaxLengthSoFar);
+            //var n2 = n1 * 2;
+            //var n3 = n2 - 1;
+            //var n4 = n3 * 5;
 
-            var d = (int)n4;
+            var d = 0;// (int)n4;
 
             d = SpeedUp(d, pMessage);
 
@@ -306,7 +329,6 @@ namespace TTSConsoleLib.Audio
             Synth.SetOutputToAudioStream(AudioStream, new SpeechAudioFormatInfo(44100, AudioBitsPerSample.Sixteen, AudioChannel.Stereo));
         }
 
-
         private DirectSoundOut audioOutput = new DirectSoundOut();
         public void PlayAudio()
         {
@@ -326,7 +348,6 @@ namespace TTSConsoleLib.Audio
                 audioOutput.Stop();
             }
         }
-
 
         public static void CopyStream(Stream input, Stream output, int bytes)
         {
