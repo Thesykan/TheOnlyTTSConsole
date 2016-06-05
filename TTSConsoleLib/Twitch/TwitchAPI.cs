@@ -13,29 +13,28 @@ namespace TTSConsoleLib.Twitch
 {
     public class TwitchAPI
     {
+        public static String _channel = String.Empty;
+
         private static Timer _updateTimer;
         public static void Init()
         {
-            _updateTimer = new Timer(x=> UpdateTwitchVariables(), null, 0, 60000);
+            _updateTimer = new Timer(x => UpdateTwitchVariables(), null, 0, 60000);
         }
-
-        public static String _channel = String.Empty;
-        private static TW_StreamInfo info;
+        
+        private static TW_StreamInfo StreamInfo;
         public static int GetNumberOfViewers()
         {
-            return info?.stream?.viewers ?? 0;
+            return StreamInfo?.stream?.viewers ?? 0;
         }
-
         public static int GetNumberOfFollowers()
         {
-            return info?.stream?.channel.followers ?? 0;
+            return StreamInfo?.stream?.channel.followers ?? 0;
         }
-
         public static String GetUpdateTime()
         {
             try
             {
-                return (DateTime.UtcNow - (info?.stream?.created_at??DateTime.MinValue)).ToString(@"hh\:mm");
+                return (DateTime.UtcNow - (StreamInfo?.stream?.created_at??DateTime.MinValue)).ToString(@"hh\:mm");
             }
             catch (Exception ex)
             {
@@ -44,6 +43,12 @@ namespace TTSConsoleLib.Twitch
             }
         }
 
+        private static TW_ChatInfo ChatInfo;
+        private static String[] EmptyStringArray = new string[] { };
+        public static String[] GetAllChatters()
+        {
+            return ChatInfo?.chatters?.GetAllChatters() ?? EmptyStringArray;
+        }
 
         /// <summary>
         /// Update Twitch Variables
@@ -57,7 +62,11 @@ namespace TTSConsoleLib.Twitch
 
                 WebRequest request = WebRequest.Create("https://api.twitch.tv/kraken/streams/" + channel);
                 var response = request.GetResponseAsync();
-                response.ContinueWith(RequestComplete);
+                response.ContinueWith(StreamRequestComplete);
+
+                request = WebRequest.Create("http://tmi.twitch.tv/group/user/" + channel + "/chatters");
+                response = request.GetResponseAsync();
+                response.ContinueWith(ChatterRequestComplete);
             }
             catch (Exception ex)
             {
@@ -65,7 +74,7 @@ namespace TTSConsoleLib.Twitch
             }
         }
 
-        private static void RequestComplete(Task<WebResponse> obj)
+        private static void StreamRequestComplete(Task<WebResponse> obj)
         {
             try
             {
@@ -76,11 +85,38 @@ namespace TTSConsoleLib.Twitch
                 var twitchObj = JsonConvert.DeserializeObject<TW_StreamInfo>(text);
                 response.Close();
 
-                var oldInfo = info;
-                info = twitchObj;
-                if ((!info?.Equals(oldInfo)) ?? false)
+                var oldInfo = StreamInfo;
+                StreamInfo = twitchObj;
+                if ((!StreamInfo?.Equals(oldInfo)) ?? false)
                 {
                     IRC.IRCClient.PrintConsoleMessage("Update Detected");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(ex.ToString());
+            }
+        }
+        private static void ChatterRequestComplete(Task<WebResponse> obj)
+        {
+            try
+            {
+                var response = obj.Result;
+                var responseStream = response.GetResponseStream();
+                var streamReader = new StreamReader(responseStream);
+                var text = streamReader.ReadToEnd();
+                var twitchObj = JsonConvert.DeserializeObject<TW_ChatInfo>(text);
+                response.Close();
+
+                var oldInfo = ChatInfo;
+                ChatInfo = twitchObj;
+                if ((!StreamInfo?.Equals(oldInfo)) ?? false)
+                {
+                    var newUsers = ChatInfo.GetNewUsers(oldInfo);
+                    if (newUsers != String.Empty)
+                    {
+                        IRC.IRCClient.PrintConsoleMessage("New Chatter(s) Detected: " + newUsers);
+                    }
                 }
             }
             catch (Exception ex)
@@ -121,5 +157,66 @@ namespace TTSConsoleLib.Twitch
     {
         public int followers;
     }
+
+
+
+    public class TW_ChatInfo : IEquatable<TW_ChatInfo>
+    {
+        public TW_Chatter chatters;
+        public int chatter_count;
+
+        public bool Equals(TW_ChatInfo other)
+        {
+            var otherlist = other.chatters.GetAllChatters();
+            var currentlist = chatters.GetAllChatters();
+            if(otherlist.Intersect(currentlist).Count() == currentlist.Length)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public string GetNewUsers(TW_ChatInfo other)
+        {
+            var currentlist = chatters.GetAllChatters();
+
+            if (other == null)
+                return String.Join(",", currentlist);
+
+            var otherlist = other.chatters.GetAllChatters();
+            return String.Join(",",otherlist.Except(currentlist).ToArray());
+        }
+
+
+    }
+    public class TW_Chatter
+    {
+        private static List<String> empty = new List<string>();
+
+        public List<String> moderators;
+        public List<String> viewers;    
+        public List<String> staff;
+        public List<String> admins;
+        public List<String> global_mods;
+
+        private String[] builtList = null;
+        public String[] GetAllChatters()
+        {
+            if (builtList != null)
+                return builtList;
+
+            List<String> fulllist = new List<string>();
+            fulllist.AddRange(moderators ?? empty);
+            fulllist.AddRange(viewers ?? empty);
+            fulllist.AddRange(staff ?? empty);
+            fulllist.AddRange(admins ?? empty);
+            fulllist.AddRange(global_mods ?? empty);
+            builtList = fulllist.ToArray();
+            return builtList;
+        }
+    }
+
+
+
 
 }

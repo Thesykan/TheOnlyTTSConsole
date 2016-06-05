@@ -10,7 +10,9 @@ TheOnlyTTSConsole Is a C# Console Application For Connecting to Twich.tv IRC cha
 * Repond To Chat Through Console
 * Internal Polling / Voting System.
 * Console Stays On Top
-# Twitch Updates Shown on Console
+* Twitch Updates Shown on Console
+* Utilizes SQLite Database to Records User Points Per Day.
+* Connect Simutaniously to Other Twitch Chats. [!AddChat / !RemoveChat]
 
 ## On First Start Up
 

@@ -99,11 +99,10 @@ namespace TTSConsoleLib.Modules
 
         public static void UserThread()
         {
-            var currentUsers = IRCClient.MainIRC_Client.Users;
-            var users = currentUsers.ToArray();
+            var users = Twitch.TwitchAPI.GetAllChatters();
             foreach (var user in users)
             {
-                MemorySystem._instance.UserPointPlusPlus(user.Nick);
+                MemorySystem._instance.UserPointPlusPlus(user);
             }
             //MemorySystem._instance.UserPointPlusPlus()   
         }

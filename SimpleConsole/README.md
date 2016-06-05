@@ -3,8 +3,6 @@
 - Reads out links :(
 
 New Features:
--Setup SQL Lite Database?
--Connect to multiple twitch chats simultaniously.
 -SHOW followers! Shoutout?
 -Show Last Time User was connected on first message.
 -Saving Polling Info To File
@@ -15,6 +13,9 @@ New Features:
 	-Show Active Polls
 	-Status Commands
 	-Timeout?
+-Control Bot Via Voice Commands.
+	https://channel9.msdn.com/Blogs/Dev-Inspiration/What-Developers-Need-To-Know-About-the-Cortana-API
+	https://developer.microsoft.com/en-us/Cortana
 
 
 Future:

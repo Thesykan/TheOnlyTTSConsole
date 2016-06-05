@@ -10,6 +10,7 @@ using ConsoleStore.Context;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TTSConsoleLib.Modules
 {
@@ -41,6 +42,7 @@ namespace TTSConsoleLib.Modules
             using (var db = new ConsoleContext())
             {
                 db.Database.EnsureCreated();
+                db.Database.Migrate();
             }
         }
 
@@ -82,16 +84,19 @@ namespace TTSConsoleLib.Modules
         {
             using (var db = new ConsoleContext())
             {
-                var users = db.tblPoint
-                    .Include(i=>i.User)
-                    .GroupBy(g => g.User)
-                    .Select(s => new { s.Key, points = s.Sum(f => f.Count) })
-                    .ToList();
+                var pointsquery = db.tblUser.Select(
+                        x => new
+                        {
+                            x.Name,
+                            points = x.Points.Select(s => s.Count).Sum()
+                        }
+                    );
+                var points = pointsquery.ToList();
 
                 StringBuilder sb = new StringBuilder();
-                foreach (var result in users)
+                foreach (var result in points)
                 {
-                    sb.Append((result?.Key?.Name ?? "N/A") + " Has " + result.points.ToString() + " Points! -- ");
+                    sb.Append((result?.Name ?? "N/A") + " Has " + (result?.points.ToString() ?? "-1") + " Points! -- ");
                 }
 
                 return sb.ToString();
@@ -130,7 +135,12 @@ namespace ConsoleStore.Context
         {
             modelBuilder.Entity<Point>()
                 .HasOne(p => p.User)
-                .WithMany(b => b.Points);
+                .WithMany(b => b.Points)
+                .HasForeignKey(f=>f.FK_User);
+
+            //modelBuilder.Entity<User>()
+            //    .HasMany(b => b.Points)
+            //    .WithOne();
         }
     }
 }
@@ -146,7 +156,7 @@ namespace ConsoleStore.Models
 
     public class Channel : BaseTable
     {
-        public virtual ICollection<User> Users { get; set; }
+        public virtual List<User> Users { get; set; }
     }
 
     /// <summary>
@@ -156,7 +166,7 @@ namespace ConsoleStore.Models
     {
         public DateTime LastActiveDate { get; set; }
 
-        public virtual ICollection<Point> Points { get; set; }
+        public virtual List<Point> Points { get; set; }
     }
 
     /// <summary>
@@ -166,7 +176,10 @@ namespace ConsoleStore.Models
     {
         public DateTime Date { get; set; }
         public int Count { get; set; }
-        
+
+
+        public int FK_User { get; set; }
+        //[ForeignKey("FK_User")]
         public virtual User User { get; set; }
     }
 
@@ -176,7 +189,7 @@ namespace ConsoleStore.Models
     /// </summary>
     public class Poll : BaseTable
     {
-        public virtual ICollection<PollOption> PollOptions { get; set; }
+        public virtual List<PollOption> PollOptions { get; set; }
     }
 
     /// <summary>
@@ -184,7 +197,8 @@ namespace ConsoleStore.Models
     /// </summary>
     public class PollOption : BaseTable
     {
-        public virtual ICollection<User> Users { get; set; }
+        public virtual Poll Poll { get; set; }
+        public virtual User User { get; set; }
     }
 
 }
