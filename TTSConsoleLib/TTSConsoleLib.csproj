@@ -53,7 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Audio\Sync.cs" />
-    <Compile Include="IRC\IrcExample.cs" />
+    <Compile Include="IRC\IrcClient.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Modules\IMessageHandle.cs" />
     <Compile Include="Modules\SoundSystem.cs" />
