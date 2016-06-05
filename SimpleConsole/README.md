@@ -1,5 +1,4 @@
 ﻿BUGS:
-- Twtich Numbers are not updating.
 - Lexicon forever Broken.
 
 New Features:

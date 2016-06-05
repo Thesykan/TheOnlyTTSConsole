@@ -7,91 +7,54 @@ using System.Net;
 using Newtonsoft.Json;
 using System.IO;
 using TTSConsoleLib.Utils;
+using System.Threading;
 
 namespace TTSConsoleLib.Twitch
 {
     public class TwitchAPI
     {
+        private static Timer _updateTimer;
+        public static void Init()
+        {
+            _updateTimer = new Timer(x=> UpdateTwitchVariables(), null, 0, 60000);
+        }
+
         public static String _channel = String.Empty;
-
-
-        private static DateTime _viewCheck = DateTime.MinValue;
         private static TW_StreamInfo info;
-        private static bool _checking = false;
         public static int GetNumberOfViewers()
         {
-            if (info == null)
-            {
-                UpdateTwitchVariables();
-                return 0;
-            }
-
-            if (_checking)
-            {
-                return info.stream?.viewers ?? 0;
-            }
-
-            if ((DateTime.Now - _viewCheck).TotalMinutes < 5)
-            {
-                return info.stream.viewers;
-            }
-            _viewCheck = DateTime.Now;
-            _checking = true;
-
-            return info.stream?.viewers ?? 0;
+            return info?.stream?.viewers ?? 0;
         }
 
         public static int GetNumberOfFollowers()
         {
-            if (info == null)
-            {
-                UpdateTwitchVariables();
-                return 0;
-            }
-
-            if (_checking)
-            {
-                return info.stream?.channel.followers ?? 0;
-            }
-            else
-            {
-                if ((DateTime.Now - _viewCheck).TotalMinutes < 2)
-                {
-                    return info.stream.channel.followers;
-                }
-                _viewCheck = DateTime.Now;
-                _checking = true;
-            }
-            return info.stream?.channel.followers ?? 0;
+            return info?.stream?.channel.followers ?? 0;
         }
 
         public static String GetUpdateTime()
         {
-            if (info == null)
-            {
-                UpdateTwitchVariables();
-                return "hh:mm";
-            }
-            //return "";
             try
             {
-                return (DateTime.UtcNow - info.stream.created_at).ToString(@"hh\:mm");
+                return (DateTime.UtcNow - (info?.stream?.created_at??DateTime.MinValue)).ToString(@"hh\:mm");
             }
             catch (Exception ex)
             {
+                Logger.Log(ex.ToString());
                 return "hh:mm";
             }
         }
 
 
-        private static void UpdateTwitchVariables()
+        /// <summary>
+        /// Update Twitch Variables
+        /// </summary>
+        public static void UpdateTwitchVariables()
         {
             try
             {
                 // Stripping # from channel name for API calls
                 string channel = _channel.Replace("#", "");
 
-                //https://api.twitch.tv/kraken/streams/theonlysykan
                 WebRequest request = WebRequest.Create("https://api.twitch.tv/kraken/streams/" + channel);
                 var response = request.GetResponseAsync();
                 response.ContinueWith(RequestComplete);
@@ -113,22 +76,38 @@ namespace TTSConsoleLib.Twitch
                 var twitchObj = JsonConvert.DeserializeObject<TW_StreamInfo>(text);
                 response.Close();
 
-                info = twitchObj;//.stream.viewers;
-                _checking = false;
+                var oldInfo = info;
+                info = twitchObj;
+                if ((!info?.Equals(oldInfo)) ?? false)
+                {
+                    IRC.IRCClient.PrintConsoleMessage("Update Detected");
+                }
             }
             catch (Exception ex)
             {
                 Logger.Log(ex.ToString());
-                _checking = false;
             }
         }
     }
 
 
 
-    public class TW_StreamInfo
+    public class TW_StreamInfo : IEquatable<TW_StreamInfo>
     {
         public TW_Stream stream;
+
+        public bool Equals(TW_StreamInfo other)
+        {
+            if ((stream?.viewers ?? 0) != (other?.stream?.viewers ?? 0))
+            {
+                return false;
+            }
+            if ((stream?.channel?.followers ?? 0) != (other?.stream?.channel?.followers ?? 0))
+            {
+                return false;
+            }
+            return true;
+        }
     }
 
     public class TW_Stream

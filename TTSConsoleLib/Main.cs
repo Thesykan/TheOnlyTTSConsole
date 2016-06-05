@@ -64,6 +64,7 @@ namespace TTSConsoleLib
 
             IRCClient.Connect(HandleUserCommands, Twitch.TwitchAPI._channel);
 
+            TwitchAPI.Init();
             VoteSystem.Init();
             UserManager.Init();
             IRCClient.Init(ConsoleWrite);

@@ -10,6 +10,7 @@ TheOnlyTTSConsole Is a C# Console Application For Connecting to Twich.tv IRC cha
 * Repond To Chat Through Console
 * Internal Polling / Voting System.
 * Console Stays On Top
+# Twitch Updates Shown on Console
 
 ## On First Start Up
 
@@ -30,7 +31,7 @@ TheOnlyTTSConsole Is a C# Console Application For Connecting to Twich.tv IRC cha
 	End Poll
 * !{PollName} {Option Name}
     Vote On Poll
-* !Lexicon {Phoneme}  --BETA--
+* !Lexicon {Phoneme}  --BETA-- -Only for 32Bit-
     Select Lexicon
 
 

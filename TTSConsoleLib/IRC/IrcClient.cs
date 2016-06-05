@@ -51,6 +51,7 @@ namespace TTSConsoleLib.IRC
             if(_messagesSent > 6)
             {
                 //Do not Send...
+                Logger.Log("Sending To many Messages...." + pMessage);
                 return;
             }
 
@@ -90,6 +91,11 @@ namespace TTSConsoleLib.IRC
         public static void PrintSystemMessage(String pMessage)
         {
             IRC.IRCClient.SendIRCMessage(pMessage);
+            HandleSystemMessage(new IRCMessage() { userName = "~System~", message = pMessage });
+        }
+
+        public static void PrintConsoleMessage(String pMessage)
+        {
             HandleSystemMessage(new IRCMessage() { userName = "~System~", message = pMessage });
         }
 
