@@ -112,27 +112,25 @@ namespace TTSConsoleLib.Modules
             return result;
         }
 
+        private static Timer _voteTimer;
         public static void Init()
         {
             ActivePolls = new List<Poll>();
-            Thread thread = new Thread(new ThreadStart(VoteThread));
+            _voteTimer = new Timer(x => VoteThread(), null, 0, 60000);
         }
-
-        public static void VoteThread()
+        private static void VoteThread()
         {
-            while (true)
+            Poll[] pollArray = ActivePolls.ToArray();
+            for (int i = 0; i < pollArray.Length; i++)
             {
-                Poll[] pollArray = ActivePolls.ToArray();
-                for (int i = 0; i < pollArray.Length; i++)
+                if (pollArray[i].TimesUp())
                 {
-                    if (pollArray[i].TimesUp())
-                    {
-                        var msg = EndPoll(pollArray[i]);
-                        IRCClient.PrintSystemMessage(msg);
-                    }
+                    var msg = EndPoll(pollArray[i]);
+                    IRCClient.PrintSystemMessage(msg);
                 }
             }
         }
+
     }
 
     public class Poll

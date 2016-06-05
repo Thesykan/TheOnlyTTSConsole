@@ -44,9 +44,9 @@ namespace SimpleConsole
             return Console.ReadLine();
         }
 
-        private static void WriteLine(String pOuput)
+        private static void WriteLine(String pOuput, ConsoleColor pColor)
         {
-            Console.ForegroundColor = ConsoleColor.White;
+            Console.ForegroundColor = pColor;
             Console.WriteLine(pOuput);
         }
 

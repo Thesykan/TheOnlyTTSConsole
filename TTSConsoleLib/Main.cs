@@ -13,13 +13,11 @@ using TTSConsoleLib.Utils;
 namespace TTSConsoleLib
 {
     public delegate String QuestionUser(String pMessage);
-    public delegate void WriteLineToUser(String pMessage);
+    public delegate void WriteLineToUser(String pMessage, ConsoleColor pColor);
     public delegate void WriteToUser(String pMessage, ConsoleColor pColor);
 
     public class Main
     {
-        private String _userName;
-
         private WriteToUser Write;
         private WriteLineToUser WriteLine;
         public void Start(QuestionUser pMethod, WriteToUser pWriteMethod, WriteLineToUser pWriteLineMethod)
@@ -62,7 +60,7 @@ namespace TTSConsoleLib
                 Twitch.TwitchAPI._channel = File.ReadAllText("Channel.JOIN");
             }
 
-            IRCClient.Connect(HandleUserCommands, Twitch.TwitchAPI._channel);
+            IRCClient.Start(HandleUserCommands, Twitch.TwitchAPI._channel);
 
             TwitchAPI.Init();
             VoteSystem.Init();
@@ -71,6 +69,7 @@ namespace TTSConsoleLib
 
             IRCMessage message = new IRCMessage();
             message.userName = userName;
+            message.channel = Twitch.TwitchAPI._channel;
             while (true)
             {
                 try
@@ -83,6 +82,9 @@ namespace TTSConsoleLib
                         IRCClient.SendIRCMessage(writeMessage);
                         message.message = writeMessage;
                         HandleUserCommands(message);
+
+                        //System Only Commands
+                        IRCClient.HandleMessages(message); 
                     }
                 }
                 catch (Exception ex)
@@ -143,33 +145,38 @@ namespace TTSConsoleLib
             int followers = TwitchAPI.GetNumberOfFollowers();
             String uptime = TwitchAPI.GetUpdateTime();
 
-            // UpTime
-            Write($"{uptime}", ConsoleColor.Red);
-            // Spacer
-            Write($" - ", ConsoleColor.Yellow);
+            //Dont show info in other channel.
+            if (pMessage.isChannelMessage)
+            {
+                // UpTime
+                Write($"{uptime}", ConsoleColor.Red);
+                // Spacer
+                Write($" - ", ConsoleColor.Yellow);
 
-            // Followers
-            Write($"{followers}", ConsoleColor.Red);
-            // Spacer
-            Write($" - ", ConsoleColor.Yellow);
+                // Followers
+                Write($"{followers}", ConsoleColor.Red);
+                // Spacer
+                Write($" - ", ConsoleColor.Yellow);
 
-            // Viewers
-            Write($"{viewers}", ConsoleColor.Red);
-            // Spacer
-            Write($" - ", ConsoleColor.Yellow);
+                // Viewers
+                Write($"{viewers}", ConsoleColor.Red);
+                // Spacer
+                Write($" - ", ConsoleColor.Yellow);
 
-            // color coded for readability.
-            // Time
-            Write($"{hour}:{minutes}", ConsoleColor.Cyan);
-            // Spacer
-            Write($" - ", ConsoleColor.Yellow);
+                // color coded for readability.
+                // Time
+                Write($"{hour}:{minutes}", ConsoleColor.Cyan);
+                // Spacer
+                Write($" - ", ConsoleColor.Yellow);
+            }
+
             // Username
             // TODO: Add some Color Randomization based off username
-            Write(pMessage.userName, ConsoleColor.Cyan);
+            Write(pMessage.userName, pMessage.isChannelMessage? ConsoleColor.Cyan : ConsoleColor.DarkRed);
             // Spacer
             Write($": ", ConsoleColor.Yellow);
             // Message
-            WriteLine(pMessage.message);
+            WriteLine(pMessage.message, pMessage.isChannelMessage ? ConsoleColor.White : ConsoleColor.Gray);
         }
 
         private static string FormatTime(int i)

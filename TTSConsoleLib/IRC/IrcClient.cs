@@ -4,14 +4,50 @@ using ChatSharp;
 using TTSConsoleLib.Utils;
 using System.Threading;
 using TTSConsoleLib.Modules;
+using System.Collections.Generic;
 
 namespace TTSConsoleLib.IRC
 {
     internal class IRCClient
     {
-        public static IrcClient IRC_Client;
 
-        public static void Connect(HandleIRCMessage pReponses = null, string pChannel = "#theonlysykan")
+        private static Dictionary<String, IrcClient> connectedClients = new Dictionary<String, IrcClient>();
+        private static String[] _addCommands = new String[] { "!addChat" };
+        private static String[] _removeCommands = new String[] { "!removeChat" };
+        public static bool HandleMessages(IRCMessage pMessageInfo)
+        {
+            CheckCommand(pMessageInfo, _addCommands, x =>
+              {
+                  if (!x.commandParam.StartsWith("#"))
+                      x.commandParam = "#" + x.commandParam;
+
+                  var client = Connect(PrintConsoleMessage, x.commandParam);
+                  connectedClients.Add(x.commandParam, client);
+              });
+
+            CheckCommand(pMessageInfo, _removeCommands, x =>
+            {
+                if (!x.commandParam.StartsWith("#"))
+                    x.commandParam = "#" + x.commandParam;
+
+                if (connectedClients.ContainsKey(x.commandParam))
+                {
+                    connectedClients[x.commandParam]?.PartChannel(x.commandParam);
+                    connectedClients[x.commandParam]?.Quit();
+                    connectedClients.Remove(x.commandParam);
+                }
+            });
+            return false;
+        }
+
+        public static IrcClient MainIRC_Client;
+
+        public static void Start(HandleIRCMessage pReponses = null, string pChannel = "#theonlysykan")
+        {
+            MainIRC_Client = Connect(pReponses, pChannel);
+        }
+
+        private static IrcClient Connect(HandleIRCMessage pReponses = null, string pChannel = "#theonlysykan")
         {
             var username = File.ReadAllText("Username.USER");
             var password = File.ReadAllText("SecretTokenDontLOOK.TOKEN");
@@ -19,24 +55,28 @@ namespace TTSConsoleLib.IRC
             if (!password.ToLower().Contains("oauth:"))
                 password = "oauth:" + password;
 
-            IRC_Client = new IrcClient("irc.chat.twitch.tv:6667",
+            var client = new IrcClient("irc.chat.twitch.tv:6667",
                 new IrcUser(username, username, password));
 
-            IRC_Client.ConnectionComplete += (s, e) => 
+            client.ConnectionComplete += (s, e) => 
             {
-                IRC_Client.JoinChannel(pChannel);
+                client.JoinChannel(pChannel);
             };
 
-            IRC_Client.ChannelMessageRecieved += (s, e) =>
+            client.ChannelMessageRecieved += (s, e) =>
             {
                 //nskaarup!nskaarup@nskaarup.tmi.twitch.tv
                 var anotherUsername = e.IrcMessage.Prefix.Split('!')[0];
 
-                var messageInfo = new IRCMessage() { userName = anotherUsername, message = e.IrcMessage.Parameters[1] };
+                var messageInfo = new IRCMessage() { userName = anotherUsername,
+                    message = e.IrcMessage.Parameters[1],
+                    channel = e.IrcMessage.Parameters[0]
+                };
                 pReponses?.Invoke(messageInfo);
             };
 
-            IRC_Client.ConnectAsync();
+            client.ConnectAsync();
+            return client;
         }
 
         private static DateTime _lastSend = DateTime.Now;
@@ -58,9 +98,9 @@ namespace TTSConsoleLib.IRC
             try
             {
                 if (pChannel == null)
-                    IRC_Client.SendMessage(pMessage, Twitch.TwitchAPI._channel);
+                    MainIRC_Client.SendMessage(pMessage, Twitch.TwitchAPI._channel);
                 else
-                    IRC_Client.SendMessage(pMessage, pChannel);
+                    MainIRC_Client.SendMessage(pMessage, pChannel);
             }
             catch (Exception ex)
             {
@@ -78,7 +118,7 @@ namespace TTSConsoleLib.IRC
             {
                 try
                 {
-                    pMessageInfo.commandParam = split[1];
+                    pMessageInfo.commandParam = split[1]?.Trim() ?? String.Empty;
                     ThreadPool.QueueUserWorkItem(x => pMethod(pMessageInfo));
                 }
                 catch (Exception ex)
@@ -91,23 +131,36 @@ namespace TTSConsoleLib.IRC
         public static void PrintSystemMessage(String pMessage)
         {
             IRC.IRCClient.SendIRCMessage(pMessage);
-            HandleSystemMessage(new IRCMessage() { userName = "~System~", message = pMessage });
+            HandlePrintConsoleMessage(new IRCMessage() { userName = "~System~", message = pMessage });
         }
 
         public static void PrintConsoleMessage(String pMessage)
         {
-            HandleSystemMessage(new IRCMessage() { userName = "~System~", message = pMessage });
+            HandlePrintConsoleMessage(new IRCMessage() { channel = Twitch.TwitchAPI._channel, userName = "~System~", message = pMessage });
+        }
+        public static void PrintConsoleMessage(IRCMessage pMessage)
+        {
+            HandlePrintConsoleMessage(pMessage);
         }
 
-        private static HandleIRCMessage HandleSystemMessage;
+        private static HandleIRCMessage HandlePrintConsoleMessage;
         public static void Init(HandleIRCMessage pPrintMessage)
         {
-            HandleSystemMessage = pPrintMessage;
+            HandlePrintConsoleMessage = pPrintMessage;
         }
     }
 
     public class IRCMessage
     {
+        public bool isChannelMessage
+        {
+            get
+            {
+                return (channel == Twitch.TwitchAPI._channel);
+            }
+        }
+
+        public String channel;
         public String userName;
         public String message;
 
