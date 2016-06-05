@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using TTSConsoleLib.Audio;
 using TTSConsoleLib.IRC;
@@ -35,7 +36,7 @@ namespace TTSConsoleLib.Modules
                     {
                         if (String.IsNullOrEmpty(split[1]))
                         {
-                            IRCClient.PrintSystemMessage("!Avaliable Voices are: " + String.Join(",", Sync.voiceArray));
+                            IRCClient.SendIRCAnPrintConsoleMessage("!Avaliable Voices are: " + String.Join(",", Sync.voiceArray));
                         }
                         else
                         {
@@ -71,6 +72,14 @@ namespace TTSConsoleLib.Modules
                         SyncPool.ReloadLexicons();
                     }
                 }
+
+                IRCClient.CheckCommand(pMessageInfo, new string[] { "!points" }, x => 
+                {
+                    IRCClient.SendIRCAnPrintConsoleMessage(MemorySystem._instance.GetUserPoints());
+                });
+
+
+
                 return result;
             }
             catch (Exception ex)
@@ -80,9 +89,25 @@ namespace TTSConsoleLib.Modules
             }
         }
 
+
+
+        private static Timer _TimerUserThread;
         public static void Init()
         {
+            _TimerUserThread = new Timer(x => UserThread(), null, 0, 60000);   
         }
+
+        public static void UserThread()
+        {
+            var currentUsers = IRCClient.MainIRC_Client.Users;
+            var users = currentUsers.ToArray();
+            foreach (var user in users)
+            {
+                MemorySystem._instance.UserPointPlusPlus(user.Nick);
+            }
+            //MemorySystem._instance.UserPointPlusPlus()   
+        }
+
 
         public static List<UserSettings> GetUserSettings()
         {

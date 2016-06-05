@@ -63,6 +63,19 @@ namespace TTSConsoleLib.IRC
                 client.JoinChannel(pChannel);
             };
 
+            if (Twitch.TwitchAPI._channel == pChannel)
+            {
+                client.UserJoinedChannel += (s, e) =>
+                {
+                    PrintConsoleMessage("~" + e.User.Nick + "~ Joined");
+                };
+
+                client.UserPartedChannel += (s, e) =>
+                {
+                    PrintConsoleMessage("~" + e.User.Nick + "~ Left");
+                };
+            }
+            
             client.ChannelMessageRecieved += (s, e) =>
             {
                 //nskaarup!nskaarup@nskaarup.tmi.twitch.tv
@@ -128,7 +141,7 @@ namespace TTSConsoleLib.IRC
             }
         }
 
-        public static void PrintSystemMessage(String pMessage)
+        public static void SendIRCAnPrintConsoleMessage(String pMessage)
         {
             IRC.IRCClient.SendIRCMessage(pMessage);
             HandlePrintConsoleMessage(new IRCMessage() { userName = "~System~", message = pMessage });

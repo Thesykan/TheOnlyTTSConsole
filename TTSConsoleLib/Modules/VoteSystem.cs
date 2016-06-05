@@ -70,13 +70,13 @@ namespace TTSConsoleLib.Modules
 
                     var Options = String.Join(" OR ", nameAndOptions, 1, nameAndOptions.Length - 1);
 
-                    IRCClient.PrintSystemMessage(name + " Poll Created!!!");
-                    IRCClient.PrintSystemMessage("Type !" + name + " and one of these options [" + Options + "] to vote");
+                    IRCClient.SendIRCAnPrintConsoleMessage(name + " Poll Created!!!");
+                    IRCClient.SendIRCAnPrintConsoleMessage("Type !" + name + " and one of these options [" + Options + "] to vote");
                     result = true;
                 }
                 else
                 {
-                    IRCClient.PrintSystemMessage("Not Enough Poll Options >.<");
+                    IRCClient.SendIRCAnPrintConsoleMessage("Not Enough Poll Options >.<");
                     //Print Angry Message
                 }
             }
@@ -91,12 +91,12 @@ namespace TTSConsoleLib.Modules
                 if (poll != null)
                 {
                     var msg = EndPoll(poll);
-                    IRCClient.PrintSystemMessage(msg);
+                    IRCClient.SendIRCAnPrintConsoleMessage(msg);
                     result = true;
                 }
                 else
                 {
-                    IRCClient.PrintSystemMessage("Poll Not Found >.<");
+                    IRCClient.SendIRCAnPrintConsoleMessage("Poll Not Found >.<");
                     //Print Angry Message
                 }
             }
@@ -126,7 +126,7 @@ namespace TTSConsoleLib.Modules
                 if (pollArray[i].TimesUp())
                 {
                     var msg = EndPoll(pollArray[i]);
-                    IRCClient.PrintSystemMessage(msg);
+                    IRCClient.SendIRCAnPrintConsoleMessage(msg);
                 }
             }
         }
