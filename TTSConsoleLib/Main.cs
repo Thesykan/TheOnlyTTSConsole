@@ -169,6 +169,13 @@ namespace TTSConsoleLib
                 // Spacer
                 Write($" - ", ConsoleColor.Yellow);
             }
+            else
+            {
+                // Show Channal
+                Write(pMessage.channel, ConsoleColor.Red);
+                // Spacer
+                Write($" - ", ConsoleColor.Yellow);
+            }
 
             // Username
             // TODO: Add some Color Randomization based off username
