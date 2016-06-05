@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TTSConsoleLib.Audio;
+using TTSConsoleLib.IRC;
 using TTSConsoleLib.Utils;
 
 namespace TTSConsoleLib.Modules
@@ -18,34 +19,34 @@ namespace TTSConsoleLib.Modules
 
         static List<UserSettings> ListOfUserSettings;
         //Handle Incoming IRC Messages
-        public static bool HandleMessages(String pUserName, String pMessage)
+        public static bool HandleMessages(IRCMessage pMessageInfo)
         {
             try
             {
                 LoadSettings();
 
-                pUserName = pUserName.ToLower();
-                pMessage = pMessage.ToLower();
+                var userName = pMessageInfo.userName.ToLower();
+                var message = pMessageInfo.message.ToLower();
                 var result = false;
 
                 {
-                    var split = pMessage.Split(new String[] { "!voice" }, StringSplitOptions.None);
+                    var split = message.Split(new String[] { "!voice" }, StringSplitOptions.None);
                     if (split.Length > 1)
                     {
                         if (String.IsNullOrEmpty(split[1]))
                         {
-                            PrintMessage("!Avaliable Voices are: " + String.Join(",", Sync.voiceArray));
+                            IRCClient.PrintSystemMessage("!Avaliable Voices are: " + String.Join(",", Sync.voiceArray));
                         }
                         else
                         {
-                            var user = ListOfUserSettings.FirstOrDefault(x => x.UserName == pUserName);
+                            var user = ListOfUserSettings.FirstOrDefault(x => x.UserName == userName);
                             if (user != null)
                             {
                                 user.Voice = split[1];
                             }
                             else
                             {
-                                ListOfUserSettings.Add(new UserSettings() { UserName = pUserName, Voice = split[1] });
+                                ListOfUserSettings.Add(new UserSettings() { UserName = userName, Voice = split[1] });
                             }
                             SaveSettings();
                         }
@@ -53,17 +54,17 @@ namespace TTSConsoleLib.Modules
                 }
 
                 {
-                    var split = pMessage.Split(new String[] { "!lexicon" }, StringSplitOptions.None);
+                    var split = message.Split(new String[] { "!lexicon" }, StringSplitOptions.None);
                     if (split.Length > 1)
                     {
-                        var user = ListOfUserSettings.FirstOrDefault(x => x.UserName == pUserName);
+                        var user = ListOfUserSettings.FirstOrDefault(x => x.UserName == userName);
                         if (user != null)
                         {
                             user.Lexicon = split[1].Trim();
                         }
                         else
                         {
-                            ListOfUserSettings.Add(new UserSettings() { UserName = pUserName, Lexicon = split[1].Trim() });
+                            ListOfUserSettings.Add(new UserSettings() { UserName = userName, Lexicon = split[1].Trim() });
                         }
                         SaveSettings();
 
@@ -79,17 +80,9 @@ namespace TTSConsoleLib.Modules
             }
         }
 
-        private static HandleUserInput HandleSystemMessage;
-        public static void Init(HandleUserInput pInput)
+        public static void Init()
         {
-            HandleSystemMessage = pInput;
         }
-        private static void PrintMessage(String pMessage)
-        {
-            IRC.IRCClient.SendIRCMessage(pMessage);
-            HandleMessages("~System~", pMessage);
-        }
-
 
         public static List<UserSettings> GetUserSettings()
         {

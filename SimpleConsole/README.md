@@ -1,7 +1,11 @@
 ﻿BUGS:
-- NO BUGS?
+- Twtich Numbers are not updating.
+- Lexicon forever Broken.
 
 New Features:
+-Connect to multiple twitch chats simultaniously.
+-Saving Polling Info To File
+-Point System?
 -Random Sounds?
 -Twitch update prints to console.
 -Voting for Timeout/PermaBan/Sync Voice Customization/Lexicons

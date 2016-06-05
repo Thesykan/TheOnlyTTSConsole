@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using TTSConsoleLib.IRC;
 
 namespace TTSConsoleLib.Modules
 {
@@ -45,13 +46,13 @@ namespace TTSConsoleLib.Modules
         }
 
         //Handle Incoming IRC Messages
-        public static bool HandleMessages(String pUserName, String pMessage)
+        public static bool HandleMessages(IRCMessage pMessageInfo)
         {
-            pMessage = pMessage.ToLower();
+            var message = pMessageInfo.message.ToLower();
 
             var result = false;
             //New Polls?
-            var split = pMessage.Split(new String[] { "!newpoll" }, StringSplitOptions.None);
+            var split = message.Split(new String[] { "!newpoll" }, StringSplitOptions.None);
             if(split.Length> 1)
             {
                 //New Poll Detected.
@@ -69,19 +70,19 @@ namespace TTSConsoleLib.Modules
 
                     var Options = String.Join(" OR ", nameAndOptions, 1, nameAndOptions.Length - 1);
 
-                    PrintMessage(name + " Poll Created!!!");
-                    PrintMessage("Type !" + name + " and one of these options [" + Options + "] to vote");
+                    IRCClient.PrintSystemMessage(name + " Poll Created!!!");
+                    IRCClient.PrintSystemMessage("Type !" + name + " and one of these options [" + Options + "] to vote");
                     result = true;
                 }
                 else
                 {
-                    PrintMessage("Not Enough Poll Options >.<");
+                    IRCClient.PrintSystemMessage("Not Enough Poll Options >.<");
                     //Print Angry Message
                 }
             }
 
             //End Polls?
-            var split2 = pMessage.Split(new String[] { "!endpoll" }, StringSplitOptions.None);
+            var split2 = message.Split(new String[] { "!endpoll" }, StringSplitOptions.None);
             if (split2.Length > 1)
             {
                 var poll = ActivePolls.FirstOrDefault(w => split2[1].Contains(w.PollName));
@@ -90,12 +91,12 @@ namespace TTSConsoleLib.Modules
                 if (poll != null)
                 {
                     var msg = EndPoll(poll);
-                    PrintMessage(msg);
+                    IRCClient.PrintSystemMessage(msg);
                     result = true;
                 }
                 else
                 {
-                    PrintMessage("Poll Not Found >.<");
+                    IRCClient.PrintSystemMessage("Poll Not Found >.<");
                     //Print Angry Message
                 }
             }
@@ -103,7 +104,7 @@ namespace TTSConsoleLib.Modules
 
             foreach (var poll in ActivePolls)
             {
-                if(poll.HandleMessages(pUserName, pMessage))
+                if(poll.HandleMessages(pMessageInfo))
                 {
                     result = true;
                 }
@@ -111,18 +112,10 @@ namespace TTSConsoleLib.Modules
             return result;
         }
 
-        private static HandleUserInput HandleSystemMessage;
-        public static void Init(HandleUserInput pInput)
+        public static void Init()
         {
             ActivePolls = new List<Poll>();
-            HandleSystemMessage = pInput;
             Thread thread = new Thread(new ThreadStart(VoteThread));
-        }
-
-        public static void PrintMessage(String pMessage)
-        {
-            IRC.IRCClient.SendIRCMessage(pMessage);
-            HandleMessages("~System~", pMessage);
         }
 
         public static void VoteThread()
@@ -135,7 +128,7 @@ namespace TTSConsoleLib.Modules
                     if (pollArray[i].TimesUp())
                     {
                         var msg = EndPoll(pollArray[i]);
-                        PrintMessage(msg);
+                        IRCClient.PrintSystemMessage(msg);
                     }
                 }
             }
@@ -242,18 +235,18 @@ namespace TTSConsoleLib.Modules
         }
 
         //Handle Incoming IRC Messages
-        public bool HandleMessages(String pUserName, String pMessage)
+        public bool HandleMessages(IRCMessage pMessageInfo)
         {
             //Check Active
             if (!_Active)
                 return false;
 
             //Already Entered
-            if (EnteredUsers.Contains(pUserName))
+            if (EnteredUsers.Contains(pMessageInfo.userName))
                 return false;
 
             var result = false;
-            var split = pMessage.Split(Commands.ToArray(), StringSplitOptions.None);
+            var split = pMessageInfo.message.Split(Commands.ToArray(), StringSplitOptions.None);
             //found a command
             if(split.Length > 1)
             {
@@ -262,8 +255,8 @@ namespace TTSConsoleLib.Modules
                 //Valid Option
                 if(foundOption != null)
                 {
-                    EnteredUsers.Add(pUserName);
-                    foundOption.Users.Add(pUserName);
+                    EnteredUsers.Add(pMessageInfo.userName);
+                    foundOption.Users.Add(pMessageInfo.userName);
                     result = true;
                 }
             }

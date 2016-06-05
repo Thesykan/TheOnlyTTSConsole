@@ -9,6 +9,7 @@ using NAudio.Wave;
 using System.Linq;
 using TTSConsoleLib.Utils;
 using TTSConsoleLib.Modules;
+using TTSConsoleLib.IRC;
 
 namespace TTSConsoleLib.Audio
 {
@@ -33,15 +34,18 @@ namespace TTSConsoleLib.Audio
             {
                 if (queue.Count > 0)
                 {
-                    Tuple<String, String> tup = null;
+                    IRCMessage tup = null;
                     lock (queue)
                     {
-                        if (thread > 0)
+                        if (queue.Count > 0)
                         {
-                            thread--;
+                            if (thread > 0)
+                            {
+                                thread--;
 
-                            tup = queue.Dequeue();
-                            ThreadPool.QueueUserWorkItem((x) => { CreateThread(tup.Item1, tup.Item2); });
+                                tup = queue.Dequeue();
+                                ThreadPool.QueueUserWorkItem((x) => { CreateThread(tup); });
+                            }
                         }
                     }
                 }
@@ -50,15 +54,18 @@ namespace TTSConsoleLib.Audio
 
         private static DateTime _lastUserNameDateTime = DateTime.Now;
         private static String _lastUserName = String.Empty;
-        private static void CreateThread(string pUsername, string pText)
+        private static void CreateThread(IRCMessage pMessageInfo)
         {
             Sync synth = null;
             try
             {
-                if (pText.Length > 230)
+                var text = pMessageInfo.message;
+                var username = pMessageInfo.userName;
+
+                if (text.Length > 230)
                 {
-                    var split = pText.Split(' ').ToList().Distinct().ToArray();
-                    pText = String.Join(" ", split);
+                    var split = text.Split(' ').ToList().Distinct().ToArray();
+                    text = String.Join(" ", split);
                 }
 
                 bool speakUserName = false;
@@ -70,9 +77,9 @@ namespace TTSConsoleLib.Audio
                         {
                             if (_readyStateSyncQueue.Count > 0)
                             {
-                                if(_lastUserName != pUsername)
+                                if(_lastUserName != username)
                                 {
-                                    _lastUserName = pUsername;
+                                    _lastUserName = username;
                                     speakUserName = true;
                                 }
 
@@ -95,14 +102,14 @@ namespace TTSConsoleLib.Audio
                 if (speakUserName)
                 {
                     synth.Synth.Rate = 2;
-                    synth.Synth.Speak(pUsername);
+                    synth.Synth.Speak(username);
                 }
 
-                synth.SetRate(pUsername, pText);
-                synth.RandomVoice(pUsername);
+                synth.SetRate(username, text);
+                synth.RandomVoice(username);
 
                 // Speak a string.
-                synth.Speak(pText);
+                synth.Speak(text);
 
             }
             catch(Exception ex)
@@ -124,13 +131,13 @@ namespace TTSConsoleLib.Audio
         private static Queue<Sync> _readyStateSyncQueue;
         private static Thread _readyThread;
 
-        private static Queue<Tuple<String, String>> queue = new Queue<Tuple<string, string>>();
+        private static Queue<IRCMessage> queue = new Queue<IRCMessage>();
 
-        public static void SpeakText(string pUsername, string pText)
+        public static void SpeakText(IRCMessage pMessageInfo)
         {
             lock (queue)
             {
-                queue.Enqueue(new Tuple<string, string>(pUsername, pText));
+                queue.Enqueue(pMessageInfo);
             }
         }
 

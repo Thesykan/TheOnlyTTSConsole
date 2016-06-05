@@ -2,16 +2,16 @@
 using System.IO;
 using ChatSharp;
 using TTSConsoleLib.Utils;
+using System.Threading;
+using TTSConsoleLib.Modules;
 
 namespace TTSConsoleLib.IRC
 {
-    public delegate void StringInput(string pUsername, string pInput);
-
     internal class IRCClient
     {
         public static IrcClient IRC_Client;
 
-        public static void Connect(StringInput pReponses = null, string pChannel = "#theonlysykan")
+        public static void Connect(HandleIRCMessage pReponses = null, string pChannel = "#theonlysykan")
         {
             var username = File.ReadAllText("Username.USER");
             var password = File.ReadAllText("SecretTokenDontLOOK.TOKEN");
@@ -31,15 +31,29 @@ namespace TTSConsoleLib.IRC
             {
                 //nskaarup!nskaarup@nskaarup.tmi.twitch.tv
                 var anotherUsername = e.IrcMessage.Prefix.Split('!')[0];
-                pReponses?.Invoke(anotherUsername, e.IrcMessage.Parameters[1]);
+
+                var messageInfo = new IRCMessage() { userName = anotherUsername, message = e.IrcMessage.Parameters[1] };
+                pReponses?.Invoke(messageInfo);
             };
 
             IRC_Client.ConnectAsync();
         }
 
-
+        private static DateTime _lastSend = DateTime.Now;
+        private static int _messagesSent = 0;
         public static void SendIRCMessage(String pMessage, String pChannel = null)
         {
+            if((DateTime.Now - _lastSend).TotalSeconds > 45)
+            {
+                _messagesSent = 0;
+            }
+
+            if(_messagesSent > 6)
+            {
+                //Do not Send...
+                return;
+            }
+
             try
             {
                 if (pChannel == null)
@@ -51,7 +65,46 @@ namespace TTSConsoleLib.IRC
             {
                 Logger.Log(ex.ToString());
             }
+
+            _messagesSent++;
         }
 
+
+        public static void CheckCommand(IRCMessage pMessageInfo, String[] Commands, HandleIRCMessage pMethod)
+        {
+            var split = pMessageInfo.message.Split(Commands, StringSplitOptions.None);
+            if (split.Length > 1)
+            {
+                try
+                {
+                    pMessageInfo.commandParam = split[1];
+                    ThreadPool.QueueUserWorkItem(x => pMethod(pMessageInfo));
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log(ex.ToString());
+                }
+            }
+        }
+
+        public static void PrintSystemMessage(String pMessage)
+        {
+            IRC.IRCClient.SendIRCMessage(pMessage);
+            HandleSystemMessage(new IRCMessage() { userName = "~System~", message = pMessage });
+        }
+
+        private static HandleIRCMessage HandleSystemMessage;
+        public static void Init(HandleIRCMessage pPrintMessage)
+        {
+            HandleSystemMessage = pPrintMessage;
+        }
+    }
+
+    public class IRCMessage
+    {
+        public String userName;
+        public String message;
+
+        public String commandParam;
     }
 }

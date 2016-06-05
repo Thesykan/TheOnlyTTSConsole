@@ -15,7 +15,6 @@ namespace TTSConsoleLib
     public delegate String QuestionUser(String pMessage);
     public delegate void WriteLineToUser(String pMessage);
     public delegate void WriteToUser(String pMessage, ConsoleColor pColor);
-    public delegate void HandleUserInput(String pUserName, String pMessage);
 
     public class Main
     {
@@ -63,11 +62,14 @@ namespace TTSConsoleLib
                 Twitch.TwitchAPI._channel = File.ReadAllText("Channel.JOIN");
             }
 
-            IRCClient.Connect(WriteToConsole, Twitch.TwitchAPI._channel);
+            IRCClient.Connect(HandleUserCommands, Twitch.TwitchAPI._channel);
 
-            VoteSystem.Init(WriteToConsole);
-            UserManager.Init(WriteToConsole);
+            VoteSystem.Init();
+            UserManager.Init();
+            IRCClient.Init(ConsoleWrite);
 
+            IRCMessage message = new IRCMessage();
+            message.userName = userName;
             while (true)
             {
                 try
@@ -78,7 +80,8 @@ namespace TTSConsoleLib
                     if (writeMessage?.Trim() != string.Empty)
                     {
                         IRCClient.SendIRCMessage(writeMessage);
-                        WriteToConsole(userName, writeMessage);
+                        message.message = writeMessage;
+                        HandleUserCommands(message);
                     }
                 }
                 catch (Exception ex)
@@ -88,12 +91,12 @@ namespace TTSConsoleLib
             }
         }
 
-        private void WriteToConsole(string pUsername, string pMessage)
+        private void HandleUserCommands(IRCMessage pMessageInfo)
         {
-            if (pUsername.Contains("bot"))
+            if (pMessageInfo.userName.Contains("bot"))
                 return;
 
-            var message = pMessage;
+            var message = pMessageInfo.message;
             var words = message.Split(' ').ToArray();
             for (int i = 0; i < words.Length; i++)
             {
@@ -108,24 +111,29 @@ namespace TTSConsoleLib
 
             bool SpeakText = true;
 
-            if (VoteSystem.HandleMessages(pUsername, message))
+            if (VoteSystem.HandleMessages(pMessageInfo))
                 SpeakText = false;
 
-            if (UserManager.IsSpeachBannedUser(pUsername))
+            if (UserManager.IsSpeachBannedUser(pMessageInfo.userName))
                 SpeakText = false;
 
-            if (UserManager.HandleMessages(pUsername, message))
+            if (UserManager.HandleMessages(pMessageInfo))
                 SpeakText = false;
 
-            if (SoundSystem.HandleMessages(pUsername, pMessage))
+            if (SoundSystem.HandleMessages(pMessageInfo))
                 SpeakText = false;
 
             if (message.Trim().StartsWith("!"))
                 SpeakText = false;
 
             if (SpeakText)
-                SyncPool.SpeakText(pUsername, message);
+                SyncPool.SpeakText(pMessageInfo);
 
+            ConsoleWrite(pMessageInfo);
+        }
+
+        private void ConsoleWrite(IRCMessage pMessage)
+        {
             string hour = FormatTime(DateTime.Now.Hour);
             string minutes = FormatTime(DateTime.Now.Minute);
             // default color
@@ -142,7 +150,7 @@ namespace TTSConsoleLib
             // Followers
             Write($"{followers}", ConsoleColor.Red);
             // Spacer
-            Write($" - ",ConsoleColor.Yellow);
+            Write($" - ", ConsoleColor.Yellow);
 
             // Viewers
             Write($"{viewers}", ConsoleColor.Red);
@@ -156,11 +164,11 @@ namespace TTSConsoleLib
             Write($" - ", ConsoleColor.Yellow);
             // Username
             // TODO: Add some Color Randomization based off username
-            Write(pUsername,ConsoleColor.Cyan);
+            Write(pMessage.userName, ConsoleColor.Cyan);
             // Spacer
             Write($": ", ConsoleColor.Yellow);
             // Message
-            WriteLine(pMessage);
+            WriteLine(pMessage.message);
         }
 
         private static string FormatTime(int i)

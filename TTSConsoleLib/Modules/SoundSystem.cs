@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using TTSConsoleLib.IRC;
 
 namespace TTSConsoleLib.Modules
 {
@@ -11,7 +13,12 @@ namespace TTSConsoleLib.Modules
     {
         private static WaveOut waveOut;
 
-        public static void Start(int frequency)
+        public static void StartASync(int frequency)
+        {
+            ThreadPool.QueueUserWorkItem(x => Start(frequency));
+        }
+
+        private static void Start(int frequency)
         {
             if (waveOut != null)
             {
@@ -20,28 +27,34 @@ namespace TTSConsoleLib.Modules
                 waveOut = null;
             }
 
-            var sineWaveProvider = new SineWaveProvider32();
-            sineWaveProvider.SetWaveFormat(16000, 1); // 16kHz mono
-            sineWaveProvider.Frequency = frequency;
-            sineWaveProvider.Amplitude = 0.25f;
-            waveOut = new WaveOut();
-            waveOut.Init(sineWaveProvider);
-            waveOut.Play();
+            frequency = Math.Min(700, frequency);
+
+            var sineWaveProvider = new SineWaveProvider32(frequency, 0.05f);
+            sineWaveProvider.SetWaveFormat(44100, 2); // 16kHz mono
+            using (waveOut = new WaveOut())
+            {
+                waveOut.Init(sineWaveProvider);
+                waveOut.Play();
+
+                while(waveOut.PlaybackState == PlaybackState.Playing)
+                {
+                    Thread.Sleep(2000);
+                }
+            }
         }
 
         //Handle Incoming IRC Messages
-        public static bool HandleMessages(String pUserName, String pMessage)
+        private static String[] _commands = { "!sin" };
+        public static bool HandleMessages(IRCMessage pMessageInfo)
         {
+            IRC.IRCClient.CheckCommand(pMessageInfo , _commands, ((x) =>
             {
-                var split = pMessage.Split(new String[] { "!sin" }, StringSplitOptions.None);
-                if (split.Length > 1)
+                int frequency = 100;
+                if (int.TryParse(x.commandParam, out frequency))
                 {
-                    int frequency = 100;
-                    if(int.TryParse(split[1], out frequency))
-                        Start(frequency);
+                    StartASync(frequency);
                 }
-            }
-
+            }));
             return false;
         }
     }
@@ -85,6 +98,7 @@ namespace TTSConsoleLib.Modules
     public class SineWaveProvider32 : WaveProvider32
     {
         int sample;
+        float frequencyOffset;
 
         public SineWaveProvider32()
         {
@@ -92,8 +106,15 @@ namespace TTSConsoleLib.Modules
             Amplitude = 0.25f; // let's not hurt our ears            
         }
 
-        public float Frequency { get; set; }
-        public float Amplitude { get; set; }
+        public SineWaveProvider32(float pFrequency, float pAmplitude)
+        {
+            Frequency = pFrequency;
+            Amplitude = Math.Min(0.25f, pAmplitude); // let's not hurt our ears        
+            frequencyOffset = Frequency / 5;    
+        }
+
+        public float Frequency { get; protected set; }
+        public float Amplitude { get; protected set; }
 
         public override int Read(float[] buffer, int offset, int sampleCount)
         {
@@ -102,8 +123,19 @@ namespace TTSConsoleLib.Modules
             {
                 buffer[n + offset] = (float)(Amplitude * Math.Sin((2 * Math.PI * sample * Frequency) / sampleRate));
                 sample++;
-                if (sample >= sampleRate) sample = 0;
+                if (sample >= sampleRate)
+                {
+                    sample = 0;
+                    //Frequency-= frequencyOffset;
+                }
+                Frequency -= Math.Max(float.Epsilon,frequencyOffset / sampleCount);
             }
+
+            if(Frequency < 15)
+            {
+                return 0;
+            }
+
             return sampleCount;
         }
     }
