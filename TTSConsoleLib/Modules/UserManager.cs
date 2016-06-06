@@ -90,7 +90,6 @@ namespace TTSConsoleLib.Modules
         }
 
 
-
         private static Timer _TimerUserThread;
         public static void Init()
         {

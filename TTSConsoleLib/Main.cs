@@ -180,7 +180,13 @@ namespace TTSConsoleLib
 
             // Username
             // TODO: Add some Color Randomization based off username
-            Write(pMessage.userName, pMessage.isChannelMessage? ConsoleColor.Cyan : ConsoleColor.DarkRed);
+            ConsoleColor userColor = ConsoleColor.Cyan;
+            if (!pMessage.isChannelMessage)
+                userColor = ConsoleColor.DarkRed;
+            if (TwitchAPI.IsFollower(pMessage.userName))
+                userColor = ConsoleColor.Magenta;   
+            Write(pMessage.userName, userColor);
+
             // Spacer
             Write($": ", ConsoleColor.Yellow);
             // Message

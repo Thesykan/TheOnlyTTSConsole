@@ -3,7 +3,6 @@
 - Reads out links :(
 
 New Features:
--SHOW followers! Shoutout?
 -Show Last Time User was connected on first message.
 -Saving Polling Info To File
 -Point System? (Weekly Points to use for giveaways at the end of the week?)
