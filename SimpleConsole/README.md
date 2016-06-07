@@ -1,13 +1,12 @@
 ﻿BUGS:
 - Lexicon forever Broken.
 - Reads out links :(
+- Database Migrate not working.
 
 New Features:
--Show Last Time User was connected on first message.
--Saving Polling Info To File
--Point System? (Weekly Points to use for giveaways at the end of the week?)
--Random Sounds?
--Twitch update prints to console.
+-Detect Voice Chat on Mic and pause Sync (1/2 Done)
+-Saving Polling Info To File (1/2 Done)
+-Random Sounds? (Modulate TTS Voices using Mixer some how?)
 -Voting for Timeout/PermaBan/Sync Voice Customization/Lexicons
 	-Show Active Polls
 	-Status Commands
@@ -24,5 +23,4 @@ Future:
 -ReWrite Chat Sharp for Nuget.
 -Dynamic Volume control for overlapping syncs.
 -Language Recognition
-
 -Make Bot Account

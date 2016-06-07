@@ -146,6 +146,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Audio\Microphone.cs" />
     <Compile Include="Audio\Sync.cs" />
     <Compile Include="IRC\IrcClient.cs" />
     <Compile Include="Main.cs" />

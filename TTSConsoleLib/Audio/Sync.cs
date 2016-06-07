@@ -159,12 +159,22 @@ namespace TTSConsoleLib.Audio
             }
         }
 
+        public static void Pause()
+        {
+            _syncList?.ForEach(x => x.pause = true);
+        }
+        public static void Resume()
+        {
+            _syncList?.ForEach(x => x.pause = false);
+        }
     }
 
     internal delegate void SyncOp(Sync pSync, bool pBool);
 
     internal class Sync
     {
+        public bool pause = false;
+
         public int pan = 0;
         static Sync()
         {
@@ -350,6 +360,15 @@ namespace TTSConsoleLib.Audio
                 while (audioOutput.PlaybackState != PlaybackState.Stopped)
                 {
                     Thread.Sleep(20);
+                    if (pause)
+                    {
+                        audioOutput.Pause();
+                        while (pause)
+                        {
+                            Thread.Sleep(20);
+                        }
+                        audioOutput.Play();
+                    }
                 }
 
                 audioOutput.Stop();

@@ -19,11 +19,21 @@ namespace TTSConsoleLib.Modules
         }
 
         static List<UserSettings> ListOfUserSettings;
+        static HashSet<String> ActiveUsers = new HashSet<string>();
         //Handle Incoming IRC Messages
         public static bool HandleMessages(IRCMessage pMessageInfo)
         {
             try
             {
+                if(!ActiveUsers.Contains(pMessageInfo.userName))
+                {
+                    ActiveUsers.Add(pMessageInfo.userName);
+                    //Shout out
+                    DateTime date = MemorySystem._instance.UsersLastActiveDate(pMessageInfo.userName);
+                    if(date != DateTime.MinValue)
+                        IRCClient.PrintConsoleMessage(pMessageInfo.userName + " is back. Last seen " + date.ToShortDateString());
+                }
+
                 LoadSettings();
 
                 var userName = pMessageInfo.userName.ToLower();

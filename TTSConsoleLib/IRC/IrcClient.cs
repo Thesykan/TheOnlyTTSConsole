@@ -5,6 +5,7 @@ using TTSConsoleLib.Utils;
 using System.Threading;
 using TTSConsoleLib.Modules;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TTSConsoleLib.IRC
 {
@@ -23,6 +24,7 @@ namespace TTSConsoleLib.IRC
 
                   var client = Connect(PrintConsoleMessage, x.commandParam);
                   connectedClients.Add(x.commandParam, client);
+                  PrintConsoleMessage("Chat Added!");
               });
 
             CheckCommand(pMessageInfo, _removeCommands, x =>
@@ -35,6 +37,7 @@ namespace TTSConsoleLib.IRC
                     connectedClients[x.commandParam]?.PartChannel(x.commandParam);
                     connectedClients[x.commandParam]?.Quit();
                     connectedClients.Remove(x.commandParam);
+                    PrintConsoleMessage("Chat Removed!");
                 }
             });
             return false;
@@ -62,19 +65,6 @@ namespace TTSConsoleLib.IRC
             {
                 client.JoinChannel(pChannel);
             };
-
-            if (Twitch.TwitchAPI._channel == pChannel)
-            {
-                client.UserJoinedChannel += (s, e) =>
-                {
-                    PrintConsoleMessage("~" + e.User.Nick + "~ Joined");
-                };
-
-                client.UserPartedChannel += (s, e) =>
-                {
-                    PrintConsoleMessage("~" + e.User.Nick + "~ Left");
-                };
-            }
             
             client.ChannelMessageRecieved += (s, e) =>
             {
@@ -131,6 +121,7 @@ namespace TTSConsoleLib.IRC
             {
                 try
                 {
+                    pMessageInfo.command = split[0]?.Trim() ?? String.Empty;
                     pMessageInfo.commandParam = split[1]?.Trim() ?? String.Empty;
                     ThreadPool.QueueUserWorkItem(x => pMethod(pMessageInfo));
                 }
@@ -149,7 +140,8 @@ namespace TTSConsoleLib.IRC
 
         public static void PrintConsoleMessage(String pMessage)
         {
-            HandlePrintConsoleMessage(new IRCMessage() { channel = Twitch.TwitchAPI._channel, userName = "~System~", message = pMessage });
+            if(HandlePrintConsoleMessage != null)
+                HandlePrintConsoleMessage(new IRCMessage() { channel = Twitch.TwitchAPI._channel, userName = "~System~", message = pMessage });
         }
         public static void PrintConsoleMessage(IRCMessage pMessage)
         {
@@ -177,6 +169,30 @@ namespace TTSConsoleLib.IRC
         public String userName;
         public String message;
 
+        public String command;
         public String commandParam;
+
+        //MAYBE?
+        private String[] _commandParamSeperated;
+        public String[] commandParamSeperated
+        {
+            get
+            {
+                if (_commandParamSeperated == null)
+                {
+                    _commandParamSeperated = commandParam.Split(',');
+                    for (int i = 0; i < _commandParamSeperated.Length; i++)
+                        _commandParamSeperated[i] = _commandParamSeperated[i].Trim();
+                }
+                return _commandParamSeperated;
+            }
+        }
+        public int NumberOfParameters
+        {
+            get
+            {
+                return commandParamSeperated.Length;
+            }
+        }
     }
 }

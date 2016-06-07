@@ -67,6 +67,7 @@ namespace TTSConsoleLib
             UserManager.Init();
             IRCClient.Init(ConsoleWrite);
             MemorySystem._instance.Init();
+            Microphone.Init();
 
             IRCMessage message = new IRCMessage();
             message.userName = userName;

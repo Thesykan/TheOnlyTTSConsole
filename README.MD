@@ -14,6 +14,9 @@ TheOnlyTTSConsole Is a C# Console Application For Connecting to Twich.tv IRC cha
 * Utilizes SQLite Database to Records User Points Per Day.
 * Connect Simutaniously to Other Twitch Chats. [!AddChat / !RemoveChat]
 * Followers Show up as Magenta
+* Message Alerts on first message when they were last in chat.
+* User Point System.
+* Twitch Variable Updates (Ex. Number Of Viewer etc...)
 
 ## On First Start Up
 

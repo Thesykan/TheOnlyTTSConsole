@@ -8,7 +8,58 @@ using TTSConsoleLib.IRC;
 
 namespace TTSConsoleLib.Modules
 {
-    public delegate void SendIRCMessage(String pMessage, String pChannel = null);
+    /// <summary>
+    /// New Voting system to use SQLite
+    /// </summary>
+    public class VoteSystem_v2
+    {
+        public static bool HandleMessages(IRCMessage pMessageInfo)
+        {
+            //New Polls?
+            IRCClient.CheckCommand(pMessageInfo, new String[] { "!newpoll" }, x =>
+            {
+                if (x.NumberOfParameters > 2)
+                {
+                    String name = x.commandParamSeperated[0].Trim();
+                    List<String> pollOptions = new List<string>();
+                    for (int i = 1; i < x.NumberOfParameters; i++)
+                    {
+                        pollOptions.Add(x.commandParamSeperated[i]);
+                    }
+                    MemorySystem._instance.NewPoll(name, pollOptions.ToArray(), DateTime.Now.AddMinutes(5));
+
+                    var Options = String.Join(" OR ", pollOptions);
+                    IRCClient.SendIRCAnPrintConsoleMessage(name + " Poll Created!!!");
+                    IRCClient.SendIRCAnPrintConsoleMessage("Type !" + name + " and one of these options [" + Options + "] to vote");
+                }
+                else
+                {
+                    IRCClient.SendIRCAnPrintConsoleMessage("Not Enough Poll Options >.<");
+                    //Print Angry Message
+                }
+            });
+
+            IRCClient.CheckCommand(pMessageInfo, new String[] { "!endpoll" }, x =>
+            {
+                var msg = MemorySystem._instance.EndPoll(x.commandParam);
+                if(msg == null)
+                    IRCClient.SendIRCAnPrintConsoleMessage("Poll Not Found >.<");
+                else
+                    IRCClient.SendIRCAnPrintConsoleMessage(msg);
+            });
+
+            IRCClient.CheckCommand(pMessageInfo, MemorySystem._instance.CurrentPolls(), x =>
+            {
+                MemorySystem._instance.AddUserToPollWithOption(pMessageInfo.command, 
+                    pMessageInfo.userName, 
+                    pMessageInfo.commandParam);
+                //Handle Voting On Poll Via SQLite
+            });
+
+            return false;
+        }
+    }
+
 
     public class VoteSystem
     {
@@ -20,12 +71,12 @@ namespace TTSConsoleLib.Modules
         /// <returns>Poll Id</returns>
         public static void StartPoll(Poll pPoll)
         {
-            if(!ActivePolls.Contains(pPoll))
+            if (!ActivePolls.Contains(pPoll))
                 ActivePolls.Add(pPoll);
 
             pPoll.Start();
         }
-        
+
         /// <summary>
         /// End Poll and Get Results
         /// </summary>
@@ -53,14 +104,14 @@ namespace TTSConsoleLib.Modules
             var result = false;
             //New Polls?
             var split = message.Split(new String[] { "!newpoll" }, StringSplitOptions.None);
-            if(split.Length> 1)
+            if (split.Length > 1)
             {
                 //New Poll Detected.
                 var nameAndOptions = split[1].Split(',');
                 if (nameAndOptions.Length > 2)
                 {
                     String name = nameAndOptions[0].Trim();
-                    var poll = new Poll(name, "!"+ name);
+                    var poll = new Poll(name, "!" + name);
                     for (int i = 1; i < nameAndOptions.Length; i++)
                     {
                         poll.AddOption(nameAndOptions[i]);
@@ -104,7 +155,7 @@ namespace TTSConsoleLib.Modules
 
             foreach (var poll in ActivePolls)
             {
-                if(poll.HandleMessages(pMessageInfo))
+                if (poll.HandleMessages(pMessageInfo))
                 {
                     result = true;
                 }

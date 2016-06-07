@@ -54,7 +54,7 @@ namespace TTSConsoleLib.Modules
                 if (user == null)
                 {
                     //Make
-                    user = new User() { Name = pUserName, LastActiveDate = DateTime.Now.Date };
+                    user = new User() { Name = pUserName };
                     db.tblUser.Add(user);
                     db.SaveChanges();
                     user = db.tblUser.Include(i => i.Points).FirstOrDefault(x => x.Name == pUserName);
@@ -103,6 +103,32 @@ namespace TTSConsoleLib.Modules
             }
         }
 
+        public DateTime UsersLastActiveDate(String pUserName)
+        {
+            using (var db = new ConsoleContext())
+            {
+                return db.tblPoint.Where(x => x.User.Name == pUserName)?.Select(s => s.Date)?.Max() ?? DateTime.MinValue;
+            }
+        }
+
+        
+        public bool NewPoll(String pName, String[] pOptions, DateTime pDuration)
+        {
+            // New Poll!!
+            return true;
+        }
+        public String EndPoll(String pName)
+        {
+            return String.Empty;
+        }
+        public String[] CurrentPolls()
+        {
+            return new String[] { };
+        }
+        public bool AddUserToPollWithOption(String pName, String pUserName, String pPollOption)
+        {
+            return true;
+        }
 
 
     }
@@ -112,6 +138,7 @@ namespace ConsoleStore.Context
 {
     public class ConsoleContext : DbContext
     {
+
         // This property defines the table
         public DbSet<Channel> tblChannel { get; set; }
         public DbSet<User> tblUser { get; set; }
@@ -130,13 +157,13 @@ namespace ConsoleStore.Context
 
             optionsBuilder.UseSqlite(connection);
         }
-
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Point>()
-                .HasOne(p => p.User)
-                .WithMany(b => b.Points)
-                .HasForeignKey(f=>f.FK_User);
+            //modelBuilder.Entity<Point>()
+            //    .HasOne(p => p.User)
+            //    .WithMany(b => b.Points)
+            //    .HasForeignKey(f=>f.FK_User);
 
             //modelBuilder.Entity<User>()
             //    .HasMany(b => b.Points)
@@ -164,7 +191,8 @@ namespace ConsoleStore.Models
     /// </summary>
     public class User : BaseTable
     {
-        public DateTime LastActiveDate { get; set; }
+        public String Voice { get; set; }
+        public String Lexicon { get; set; }
 
         public virtual List<Point> Points { get; set; }
     }
@@ -178,7 +206,7 @@ namespace ConsoleStore.Models
         public int Count { get; set; }
 
 
-        public int FK_User { get; set; }
+        //public int FK_User { get; set; }
         //[ForeignKey("FK_User")]
         public virtual User User { get; set; }
     }
@@ -189,6 +217,21 @@ namespace ConsoleStore.Models
     /// </summary>
     public class Poll : BaseTable
     {
+        public String PollName { get; set; }
+        public String Commands { get; set; }
+        public DateTime EndDateTime { get; set; }
+        public bool Active { get; set; }
+
+        [NotMapped]
+        public List<String> EnteredUsers
+        {
+            get
+            {
+                return PollOptions?.Select(s => s.User.Name).ToList();
+            }
+        }
+
+
         public virtual List<PollOption> PollOptions { get; set; }
     }
 
