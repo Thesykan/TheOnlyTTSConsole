@@ -337,18 +337,19 @@ namespace TTSConsoleLib.Audio
 
             PlayAudio();
 
-            if (AudioStream != null)
-            {
-                try { AudioStream.Dispose(); } catch { }
-            }
-
-            AudioStream = new MemoryStream();
-            Synth.SetOutputToAudioStream(AudioStream, new SpeechAudioFormatInfo(44100, AudioBitsPerSample.Sixteen, AudioChannel.Stereo));
+            AudioStream.Position = 0;
+            //if (AudioStream != null)
+            //{
+            //    try { AudioStream.Dispose(); } catch { }
+            //}
+            //AudioStream = new MemoryStream();
+            //Synth.SetOutputToAudioStream(AudioStream, new SpeechAudioFormatInfo(44100, AudioBitsPerSample.Sixteen, AudioChannel.Stereo));
         }
 
         private DirectSoundOut audioOutput = new DirectSoundOut();
         public void PlayAudio()
         {
+            long textPosition = AudioStream.Position;
             AudioStream.Position = 0;
             using (WaveStream stream = new RawSourceWaveStream(AudioStream, new WaveFormat(44100, 16, 2)))
             using (WaveChannel32 wc = new WaveChannel32(stream, 1, pan) { PadWithZeroes = false })
@@ -359,6 +360,11 @@ namespace TTSConsoleLib.Audio
 
                 while (audioOutput.PlaybackState != PlaybackState.Stopped)
                 {
+                    if((audioOutput.GetPosition() >= textPosition))
+                    {
+                        audioOutput.Stop();
+                    }
+
                     Thread.Sleep(20);
                     if (pause)
                     {
@@ -375,16 +381,16 @@ namespace TTSConsoleLib.Audio
             }
         }
 
-        public static void CopyStream(Stream input, Stream output, int bytes)
-        {
-            byte[] buffer = new byte[32768];
-            int read;
-            while (bytes > 0 &&
-                   (read = input.Read(buffer, 0, Math.Min(buffer.Length, bytes))) > 0)
-            {
-                output.Write(buffer, 0, read);
-                bytes -= read;
-            }
-        }
+        //public static void CopyStream(Stream input, Stream output, int bytes)
+        //{
+        //    byte[] buffer = new byte[32768];
+        //    int read;
+        //    while (bytes > 0 &&
+        //           (read = input.Read(buffer, 0, Math.Min(buffer.Length, bytes))) > 0)
+        //    {
+        //        output.Write(buffer, 0, read);
+        //        bytes -= read;
+        //    }
+        //}
     }
 }

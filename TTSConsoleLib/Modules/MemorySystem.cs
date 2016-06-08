@@ -37,47 +37,43 @@ namespace TTSConsoleLib.Modules
         { }
         #endregion
 
+        ConsoleContext db;
         public void Init()
         {
-            using (var db = new ConsoleContext())
-            {
-                db.Database.EnsureCreated();
-                db.Database.Migrate();
-            }
+            db = new ConsoleContext();
+            db.Database.EnsureCreated();
+            db.Database.Migrate();
         }
 
         public void UserPointPlusPlus(String pUserName)
         {
-            using (var db = new ConsoleContext())
+            var user = db.tblUser.Include(i=>i.Points).FirstOrDefault(x => x.Name == pUserName);
+            if (user == null)
             {
-                var user = db.tblUser.Include(i=>i.Points).FirstOrDefault(x => x.Name == pUserName);
-                if (user == null)
-                {
-                    //Make
-                    user = new User() { Name = pUserName };
-                    db.tblUser.Add(user);
-                    db.SaveChanges();
-                    user = db.tblUser.Include(i => i.Points).FirstOrDefault(x => x.Name == pUserName);
-                }
-
-                var points = user.Points.FirstOrDefault(x => x.Date == DateTime.Now.Date);
-                if (points == null)
-                {
-                    //Make
-                    var po = new Point() { Date = DateTime.Now.Date, Count = 1, User = user }; 
-                    db.tblPoint.Add(po);
-                    db.SaveChanges();
-
-                    user.Points.Add(po);
-                }
-                else
-                {
-                    //Modify
-                    points.Count++;
-                }
-
+                //Make
+                user = new User() { Name = pUserName };
+                db.tblUser.Add(user);
                 db.SaveChanges();
+                user = db.tblUser.Include(i => i.Points).FirstOrDefault(x => x.Name == pUserName);
             }
+
+            var points = user.Points.FirstOrDefault(x => x.Date == DateTime.Now.Date);
+            if (points == null)
+            {
+                //Make
+                var po = new Point() { Date = DateTime.Now.Date, Count = 1, User = user }; 
+                db.tblPoint.Add(po);
+                db.SaveChanges();
+
+                user.Points.Add(po);
+            }
+            else
+            {
+                //Modify
+                points.Count++;
+            }
+
+            db.SaveChanges();
         }
 
         public String GetUserPoints()
