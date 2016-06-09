@@ -229,11 +229,10 @@ namespace TTSConsoleLib.Twitch
                 return String.Join(",", currentlist);
 
             var otherlist = other.chatters.GetAllChatters();
-            return String.Join(",", otherlist.Except(currentlist).ToArray());
+            return String.Join(",", currentlist.Except(otherlist).ToArray());
         }
-
-
     }
+
     public class TW_Chatter
     {
         private static List<String> empty = new List<string>();
