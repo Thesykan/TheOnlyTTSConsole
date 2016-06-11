@@ -100,18 +100,7 @@ namespace TTSConsoleLib
         {
             if (pMessageInfo.userName.Contains("bot"))
                 return;
-
-            var message = pMessageInfo.message;
-            var words = message.Split(' ').ToArray();
-            for (int i = 0; i < words.Length; i++)
-            {
-                if (words[i].ToLower().Contains("http"))
-                {
-                    words[i] = string.Empty;
-                }
-            }
-            message = string.Join(" ", words);
-
+            
             SyncPool.Init();
 
             bool SpeakText = true;
@@ -128,7 +117,7 @@ namespace TTSConsoleLib
             if (SoundSystem.HandleMessages(pMessageInfo))
                 SpeakText = false;
 
-            if (message.Trim().StartsWith("!"))
+            if (pMessageInfo.message.Trim().StartsWith("!"))
                 SpeakText = false;
 
             if (SpeakText)
@@ -191,6 +180,7 @@ namespace TTSConsoleLib
             // Spacer
             Write($": ", ConsoleColor.Yellow);
             // Message
+            
             WriteLine(pMessage.message, pMessage.isChannelMessage ? ConsoleColor.White : ConsoleColor.Gray);
         }
 

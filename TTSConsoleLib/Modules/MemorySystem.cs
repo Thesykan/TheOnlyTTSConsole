@@ -11,6 +11,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Threading;
 
 namespace TTSConsoleLib.Modules
 {
@@ -37,43 +38,73 @@ namespace TTSConsoleLib.Modules
         { }
         #endregion
 
-        ConsoleContext db;
+        Timer _saveThread;
         public void Init()
         {
-            db = new ConsoleContext();
-            db.Database.EnsureCreated();
-            db.Database.Migrate();
+            using (ConsoleContext db = new ConsoleContext())
+            {
+                db.Database.EnsureCreated();
+                db.Database.Migrate();
+            }
+            _saveThread = new Timer(x => SaveEveryFiveMinutes(), null, 0, 60 * 5 * 1000);
         }
 
+        public void SaveEveryFiveMinutes()
+        {
+            using (ConsoleContext db = new ConsoleContext())
+            {
+                lock (UserPoints)
+                {
+                    foreach (var kvp in UserPoints)
+                    {
+                        var user = db.tblUser.Include(i => i.Points).FirstOrDefault(x => x.Name == kvp.Key);
+                        if (user == null)
+                        {
+                            //Make
+                            user = new User() { Name = kvp.Key };
+                            db.tblUser.Add(user);
+                            db.SaveChanges();
+                            user = db.tblUser.Include(i => i.Points).FirstOrDefault(x => x.Name == kvp.Key);
+                        }
+
+                        var points = user.Points.FirstOrDefault(x => x.Date == DateTime.Now.Date);
+                        if (points == null)
+                        {
+                            //Make
+                            var po = new Point() { Date = DateTime.Now.Date, Count = kvp.Value, User = user };
+                            db.tblPoint.Add(po);
+                            db.SaveChanges();
+
+                            user.Points.Add(po);
+                        }
+                        else
+                        {
+                            //Modify
+                            points.Count += kvp.Value;
+                        }
+                        db.SaveChanges();
+                    }
+                    UserPoints.Clear();
+                }
+            }
+        }
+
+
+
+        Dictionary<String, int> UserPoints = new Dictionary<string, int>();
         public void UserPointPlusPlus(String pUserName)
         {
-            var user = db.tblUser.Include(i=>i.Points).FirstOrDefault(x => x.Name == pUserName);
-            if (user == null)
+            lock (UserPoints)
             {
-                //Make
-                user = new User() { Name = pUserName };
-                db.tblUser.Add(user);
-                db.SaveChanges();
-                user = db.tblUser.Include(i => i.Points).FirstOrDefault(x => x.Name == pUserName);
+                if (UserPoints.ContainsKey(pUserName))
+                {
+                    UserPoints[pUserName]++;
+                }
+                else
+                {
+                    UserPoints.Add(pUserName, 1);
+                }
             }
-
-            var points = user.Points.FirstOrDefault(x => x.Date == DateTime.Now.Date);
-            if (points == null)
-            {
-                //Make
-                var po = new Point() { Date = DateTime.Now.Date, Count = 1, User = user }; 
-                db.tblPoint.Add(po);
-                db.SaveChanges();
-
-                user.Points.Add(po);
-            }
-            else
-            {
-                //Modify
-                points.Count++;
-            }
-
-            db.SaveChanges();
         }
 
         public String GetUserPoints()
@@ -132,6 +163,8 @@ namespace TTSConsoleLib.Modules
 
 namespace ConsoleStore.Context
 {
+    //EF 7 Beta. Does not support Migration as of yet...
+    //Will have to build in auto migration on next release version is shema changes.
     public class ConsoleContext : DbContext
     {
 
@@ -156,14 +189,6 @@ namespace ConsoleStore.Context
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            //modelBuilder.Entity<Point>()
-            //    .HasOne(p => p.User)
-            //    .WithMany(b => b.Points)
-            //    .HasForeignKey(f=>f.FK_User);
-
-            //modelBuilder.Entity<User>()
-            //    .HasMany(b => b.Points)
-            //    .WithOne();
         }
     }
 }

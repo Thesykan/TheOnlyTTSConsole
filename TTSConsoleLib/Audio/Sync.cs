@@ -105,6 +105,19 @@ namespace TTSConsoleLib.Audio
                     synth.Synth.Speak(username);
                 }
 
+                //Clean out addresses.
+                var words = text.Split(' ').ToArray();
+                for (int i = 0; i < words.Length; i++)
+                {
+                    if (words[i].ToLower().Contains("http"))
+                    {
+                        words[i] = string.Empty;
+                    }
+                }
+                text = string.Join(" ", words);
+                //CLEAN TEXT 
+
+
                 synth.SetRate(username, text);
                 synth.RandomVoice(username);
 
@@ -267,9 +280,10 @@ namespace TTSConsoleLib.Audio
         public void RandomVoice(String pUsername)
         {
             var settings = UserManager.GetUserSettings(pUsername);
-            if (settings != null && _voices.Where(w=>w.VoiceInfo.Name.Contains(settings.Voice)).Any())
+
+            if (settings != null && _voices.Any(w=>w.VoiceInfo.Name.ToLower().Contains(settings.Voice.Trim().ToLower())))
             {
-                var voice = _voices.FirstOrDefault(w => w.VoiceInfo.Name.Contains(settings.Voice));
+                var voice = _voices.FirstOrDefault(w => w.VoiceInfo.Name.ToLower().Contains(settings.Voice.Trim().ToLower()));
                 Synth.SelectVoice(voice.VoiceInfo.Name);
             }
             else
@@ -360,7 +374,7 @@ namespace TTSConsoleLib.Audio
 
                 while (audioOutput.PlaybackState != PlaybackState.Stopped)
                 {
-                    if((audioOutput.GetPosition() >= textPosition))
+                    if((AudioStream.Position >= textPosition))
                     {
                         audioOutput.Stop();
                     }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace TTSConsoleLib.Audio
 {
+    //https://blogs.msdn.microsoft.com/dawate/2009/06/23/intro-to-audio-programming-part-2-demystifying-the-wav-format/
     public class Microphone
     {
 

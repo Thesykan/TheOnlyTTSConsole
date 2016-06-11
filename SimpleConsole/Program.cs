@@ -46,13 +46,23 @@ namespace SimpleConsole
 
         private static void WriteLine(String pOuput, ConsoleColor pColor)
         {
+            if (pOuput == null)
+                return;
+
             Console.ForegroundColor = pColor;
+
+            pOuput = pOuput.Replace(":)", "\x001").Replace(":]", "\x002");
             Console.WriteLine(pOuput);
         }
 
         private static void Write(String pOuput, ConsoleColor pColor)
         {
+            if (pOuput == null)
+                return;
+
             Console.ForegroundColor = pColor;
+
+            pOuput = pOuput.Replace(":)", "\x001").Replace(":]", "\x002");
             Console.Write(pOuput);
         }
     }
