@@ -99,11 +99,6 @@ namespace TTSConsoleLib.Audio
                     ResetEvent.Reset();
                 }
 
-                if (speakUserName)
-                {
-                    synth.Synth.Rate = 2;
-                    synth.Synth.Speak(username);
-                }
 
                 //Clean out addresses.
                 var words = text.Split(' ').ToArray();
@@ -117,8 +112,9 @@ namespace TTSConsoleLib.Audio
                 text = string.Join(" ", words);
                 //CLEAN TEXT 
 
-
                 synth.SetRate(username, text);
+                if (speakUserName)
+                    synth.Synth.Speak(username);
                 synth.RandomVoice(username);
 
                 // Speak a string.
@@ -185,14 +181,49 @@ namespace TTSConsoleLib.Audio
         {
             _syncList?.ForEach(x => x.skip = true);
         }
+
+        public static void SpeedUp()
+        {
+            _syncList?.ForEach(x => {
+                if (x.speed == SyncSpeed.SortaFast)
+                    x.speed = SyncSpeed.VeryFast;
+                else
+                    x.speed = SyncSpeed.SortaFast;
+           });
+        }
+        public static void SlowDown()
+        {
+            _syncList?.ForEach(x => {
+                if (x.speed == SyncSpeed.SortaSlow)
+                    x.speed = SyncSpeed.VerySlow;
+                else
+                    x.speed = SyncSpeed.SortaSlow;
+                });
+        }
+        public static void NormalSpeed()
+        {
+            _syncList?.ForEach(x => x.speed = SyncSpeed.Normal);
+        }
+
     }
 
     internal delegate void SyncOp(Sync pSync, bool pBool);
+
+
+    enum SyncSpeed
+    {
+        Normal,
+        SortaSlow = -5,
+        VerySlow = -10,
+        SortaFast = 5,
+        VeryFast = 10
+    }
 
     internal class Sync
     {
         public bool pause = false;
         public bool skip = false;
+        public SyncSpeed speed = SyncSpeed.Normal;
 
         public int pan = 0;
         static Sync()
@@ -333,21 +364,27 @@ namespace TTSConsoleLib.Audio
 
         public int SpeedUp(int v, string m)
         {
-            int j = 0;
-            if (m.Length > 50)
-                j++;
-            if (m.Length > 100)
-                j++;
-            if (m.Length > 200)
-                j++;
-            if (m.Length > 300)
-                j++;
+            switch (speed) {
+                case SyncSpeed.Normal:
+                    int j = 0;
+                    if (m.Length > 50)
+                        j++;
+                    if (m.Length > 100)
+                        j++;
+                    if (m.Length > 200)
+                        j++;
+                    if (m.Length > 300)
+                        j++;
 
-            for (int i = 0; i < j; i++)
-            {
-                v = v + (Math.Abs(v) / 2) + 2;
+                    for (int i = 0; i < j; i++)
+                    {
+                        v = v + (Math.Abs(v) / 2) + 2;
+                    }
+
+                    break;
+                default:
+                    return (int)(speed);
             }
-
             return v;
         }
 

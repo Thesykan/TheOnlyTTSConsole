@@ -10,6 +10,7 @@
 	* Timeout?
 * High Perfomance Compiled expresion for sound modifications
 * Custom Voice Commands for Random Stuff {TACO FIGHT!, }
+* Build a bot NET !!!!!!!!!!!!!!!! https://dev.botframework.com/ {JUNICUS}
 
 
 ## Future:

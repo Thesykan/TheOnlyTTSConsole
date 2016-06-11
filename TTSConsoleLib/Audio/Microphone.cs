@@ -32,7 +32,8 @@ namespace TTSConsoleLib.Audio
             recognizer = new SpeechRecognitionEngine(new System.Globalization.CultureInfo("en-US"));
 
             Choices colors = new Choices();
-            colors.Add(new string[] { "boom shakalaka", "Wubba lubba dub dub", "Hit the sack jack" });
+            colors.Add(new string[] { "boom shakalaka", "Wubba lubba dub dub", "Slow the frak down", "speed the hell up", "Play Normal Speed" });
+            //"Hit the sack jack",
 
             GrammarBuilder gb = new GrammarBuilder();
             gb.Append(colors);
@@ -59,8 +60,33 @@ namespace TTSConsoleLib.Audio
         {
             try
             {
-                IRC.IRCClient.PrintConsoleMessage(e?.Result?.Text ?? String.Empty);
-                SyncPool.SkipOneMessage();
+                if (e.Result.Confidence < 0.9f)
+                    return;
+
+                var msg = e?.Result?.Text ?? String.Empty;
+                msg += " - " + e.Result.Confidence.ToString();
+                IRC.IRCClient.PrintConsoleMessage(msg);
+
+                switch (e?.Result?.Text.ToLower() ?? null)
+                {
+                    case "boom shakalaka":
+                    case "wubba lubba dub dub":
+                    case "hit the sack jack":
+                        SyncPool.SkipOneMessage();
+                        break;
+                    case "slow the frak down":
+                        SyncPool.SlowDown();
+                        break;
+                    case "speed the hell up":
+                        SyncPool.SpeedUp();
+                        break;
+                    case "play normal speed":
+                        SyncPool.NormalSpeed();
+                        break;
+                    default:
+                        break;
+                }
+
             }
             catch (Exception ex)
             {
