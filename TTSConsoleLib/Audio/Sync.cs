@@ -180,6 +180,11 @@ namespace TTSConsoleLib.Audio
         {
             _syncList?.ForEach(x => x.pause = false);
         }
+
+        public static void SkipOneMessage()
+        {
+            _syncList?.ForEach(x => x.skip = true);
+        }
     }
 
     internal delegate void SyncOp(Sync pSync, bool pBool);
@@ -187,6 +192,7 @@ namespace TTSConsoleLib.Audio
     internal class Sync
     {
         public bool pause = false;
+        public bool skip = false;
 
         public int pan = 0;
         static Sync()
@@ -363,6 +369,8 @@ namespace TTSConsoleLib.Audio
         private DirectSoundOut audioOutput = new DirectSoundOut();
         public void PlayAudio()
         {
+            skip = false;
+
             long textPosition = AudioStream.Position;
             AudioStream.Position = 0;
             using (WaveStream stream = new RawSourceWaveStream(AudioStream, new WaveFormat(44100, 16, 2)))
@@ -374,6 +382,9 @@ namespace TTSConsoleLib.Audio
 
                 while (audioOutput.PlaybackState != PlaybackState.Stopped)
                 {
+                    if (skip)
+                        audioOutput.Stop();
+
                     if((AudioStream.Position >= textPosition))
                     {
                         audioOutput.Stop();
@@ -385,6 +396,9 @@ namespace TTSConsoleLib.Audio
                         audioOutput.Pause();
                         while (pause)
                         {
+                            if (skip)
+                                audioOutput.Stop();
+
                             Thread.Sleep(20);
                         }
                         audioOutput.Play();
@@ -393,6 +407,7 @@ namespace TTSConsoleLib.Audio
 
                 audioOutput.Stop();
             }
+
         }
 
         //public static void CopyStream(Stream input, Stream output, int bytes)

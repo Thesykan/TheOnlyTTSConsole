@@ -110,7 +110,17 @@ namespace TTSConsoleLib.Modules
         {
             Frequency = pFrequency;
             Amplitude = Math.Min(0.25f, pAmplitude); // let's not hurt our ears        
-            frequencyOffset = Frequency / 5;    
+            frequencyOffset = Frequency / 5;
+        }
+
+        private String expression;
+        public SineWaveProvider32(float pFrequency, float pAmplitude, String pExpression)
+        {
+            Frequency = pFrequency;
+            Amplitude = Math.Min(0.25f, pAmplitude); // let's not hurt our ears        
+            frequencyOffset = Frequency / 5;
+
+            expression = pExpression;
         }
 
         public float Frequency { get; protected set; }
@@ -118,6 +128,11 @@ namespace TTSConsoleLib.Modules
 
         public override int Read(float[] buffer, int offset, int sampleCount)
         {
+            //x^4 - x^3 + 1
+
+            //buffer[n + offset] = (float)(Amplitude * Math.Sin((2 * Math.PI * sample * Frequency) / sampleRate));
+
+
             int sampleRate = WaveFormat.SampleRate;
             for (int n = 0; n < sampleCount; n++)
             {

@@ -8,10 +8,8 @@
 	* Show Active Polls
 	* Status Commands
 	* Timeout?
-* Control Bot Via Voice Commands.
-	https://channel9.msdn.com/Blogs/Dev* Inspiration/What* Developers* Need* To* Know* About* the* Cortana* API
-	https://developer.microsoft.com/en* us/Cortana
-
+* High Perfomance Compiled expresion for sound modifications
+* Custom Voice Commands for Random Stuff {TACO FIGHT!, }
 
 
 ## Future:

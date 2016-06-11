@@ -17,6 +17,7 @@ TheOnlyTTSConsole Is a C# Console Application For Connecting to Twich.tv IRC cha
 * Message Alerts on first message when they were last in chat.
 * User Point System.
 * Detect Voice Chat on Mic and pause TTS
+* Voice Commands!!!! Credit:{Twitch:junicus}
 
 ## On First Start Up
 

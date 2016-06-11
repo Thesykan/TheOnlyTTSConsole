@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Speech.Recognition;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ namespace TTSConsoleLib.Audio
         static WaveInEvent recorder;
         static Timer _timer;
         static int samplerate = 1;
+        static SpeechRecognitionEngine recognizer;
         public static void Init()
         {
             recorder = new WaveInEvent();
@@ -24,6 +26,46 @@ namespace TTSConsoleLib.Audio
 
             _timer = new Timer(x => UpdateThread(), null, 0, 500);
             recorder.StartRecording();
+
+
+            // Create an in-process speech recognizer for the en-US locale.
+            recognizer = new SpeechRecognitionEngine(new System.Globalization.CultureInfo("en-US"));
+
+            Choices colors = new Choices();
+            colors.Add(new string[] { "boom shakalaka", "Wubba lubba dub dub", "Hit the sack jack" });
+
+            GrammarBuilder gb = new GrammarBuilder();
+            gb.Append(colors);
+
+            // Create the Grammar instance.
+            Grammar g = new Grammar(gb);
+
+            recognizer.LoadGrammar(g);
+
+            // Create and load a dictation grammar.
+            //recognizer.LoadGrammar(new DictationGrammar());
+
+            // Add a handler for the speech recognized event.
+            recognizer.SpeechRecognized += Sr_SpeechRecognized;
+
+            // Configure input to the speech recognizer.
+            recognizer.SetInputToDefaultAudioDevice();
+
+            // Start asynchronous, continuous speech recognition.
+            recognizer.RecognizeAsync(RecognizeMode.Multiple);
+        }
+
+        private static void Sr_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
+        {
+            try
+            {
+                IRC.IRCClient.PrintConsoleMessage(e?.Result?.Text ?? String.Empty);
+                SyncPool.SkipOneMessage();
+            }
+            catch (Exception ex)
+            {
+                Utils.Logger.Log(ex.ToString());
+            }
         }
 
         static bool paused = false;
