@@ -7,7 +7,7 @@ using System.IO;
 
 namespace TTSConsoleLib.Utils
 {
-    class Logger
+    public class Logger
     {
         static StreamWriter _logStream;
         static Logger()

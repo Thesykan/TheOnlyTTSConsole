@@ -69,31 +69,24 @@ namespace TTSConsoleLib
             MemorySystem._instance.Init();
             Microphone.Init();
 
-            IRCMessage message = new IRCMessage();
-            message.userName = userName;
-            message.channel = Twitch.TwitchAPI._channel;
-            while (true)
-            {
-                try
-                {
-                    var writeMessage = Console.ReadLine();
-                    if (writeMessage?.Trim() == "q")
-                        break;
-                    if (writeMessage?.Trim() != string.Empty)
-                    {
-                        IRCClient.SendIRCMessage(writeMessage);
-                        message.message = writeMessage;
-                        HandleUserCommands(message);
+            //IRCMessage message = new IRCMessage();
+            //message.userName = userName;
+            //message.channel = Twitch.TwitchAPI._channel;
+          
+        }
 
-                        //System Only Commands
-                        IRCClient.HandleMessages(message); 
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Log(ex.ToString());
-                }
-            }
+        public void SendIRCMessage(String writeMessage)
+        {
+            IRCMessage message = new IRCMessage();
+            message.userName = Twitch.TwitchAPI._channel.Replace("#","");
+            message.channel = Twitch.TwitchAPI._channel;
+
+            IRCClient.SendIRCMessage(writeMessage);
+            message.message = writeMessage;
+            HandleUserCommands(message);
+
+            //System Only Commands
+            IRCClient.HandleMessages(message);
         }
 
         private void HandleUserCommands(IRCMessage pMessageInfo)
@@ -187,6 +180,11 @@ namespace TTSConsoleLib
         private static string FormatTime(int i)
         {
             return (i > 9 ? "" : "0") + i;
+        }
+
+        public void CommandKey()
+        {
+            Microphone.ToggleListen();
         }
     }
 }

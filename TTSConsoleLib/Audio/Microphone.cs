@@ -56,6 +56,22 @@ namespace TTSConsoleLib.Audio
             recognizer.RecognizeAsync(RecognizeMode.Multiple);
         }
 
+        public static bool Listening = true;
+        public static void ToggleListen()
+        {
+            if (Listening)
+            {
+                IRC.IRCClient.PrintConsoleMessage("Stop Listening!!");
+                recognizer.RecognizeAsyncStop();
+            }
+            else
+            {
+                IRC.IRCClient.PrintConsoleMessage("Start Listening!!");
+                recognizer.RecognizeAsync(RecognizeMode.Multiple);
+            }
+            Listening = !Listening; 
+        }
+
         private static void Sr_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
         {
             try

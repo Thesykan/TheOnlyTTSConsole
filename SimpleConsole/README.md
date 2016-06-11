@@ -1,5 +1,7 @@
 ﻿## BUGS:
-
+* Can't write in console any :(
+* Sync Voice Selection Error
+* Gateway Error from twitch.
 
 ## New Features:
 * Saving Polling Info To File (1/2 Done)
