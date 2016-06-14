@@ -27,7 +27,7 @@ namespace TTSConsoleLib.Audio
             _readyThread.Start();
         }
 
-        private static int thread = 2;
+        private static int thread = 1;
         private static void SpeechThread()
         {
             while (true)
@@ -142,11 +142,27 @@ namespace TTSConsoleLib.Audio
 
         private static Queue<IRCMessage> queue = new Queue<IRCMessage>();
 
+        static Dictionary<String, LinkedList<IRCMessage>> userMessageHistory = new Dictionary<string, LinkedList<IRCMessage>>();
         public static void SpeakText(IRCMessage pMessageInfo)
         {
             lock (queue)
             {
                 queue.Enqueue(pMessageInfo);
+
+                var user = pMessageInfo?.userName ?? String.Empty;
+                if (userMessageHistory.ContainsKey(user))
+                {
+                    //Keep Last Ten Messages 
+                    if(userMessageHistory[user].Count > 3)
+                        userMessageHistory[user].RemoveFirst();
+
+                    userMessageHistory[user].AddLast(pMessageInfo);
+                }
+                else
+                {
+                    userMessageHistory.Add(user, new LinkedList<IRCMessage>());
+                    userMessageHistory[user].AddLast(pMessageInfo);
+                }
             }
         }
 
@@ -177,8 +193,40 @@ namespace TTSConsoleLib.Audio
             _syncList?.ForEach(x => x.pause = false);
         }
 
-        public static void SkipOneMessage()
+        public static void RepeatFuzzyUser(String pUserName)
         {
+            String lowestUserNameFound = String.Empty;
+            int val = int.MaxValue;
+
+            var realusernames = userMessageHistory.Keys.ToArray();
+            for (int i = 0; i < realusernames.Length; i++)
+            {
+
+                var cval = LevenshteinDistance.Compute(pUserName, realusernames[i]);
+                if(cval < val)
+                {
+                    lowestUserNameFound = realusernames[i];
+                    val = cval;
+                }
+            }
+
+            if(lowestUserNameFound != String.Empty)
+            {
+                var messages = userMessageHistory[lowestUserNameFound].ToArray();
+                for (int i = 0; i < messages.Length; i++)
+                {
+                    SpeakText(messages[i]);
+                }
+            }
+
+        }
+
+        public static void SkipALLMessages()
+        {
+            lock (_readyStateSyncQueue)
+            {
+                queue.Clear();
+            }
             _syncList?.ForEach(x => x.skip = true);
         }
 
@@ -205,6 +253,60 @@ namespace TTSConsoleLib.Audio
             _syncList?.ForEach(x => x.speed = SyncSpeed.Normal);
         }
 
+    }
+
+    /// <summary>
+    /// Contains approximate string matching
+    /// </summary>
+    static class LevenshteinDistance
+    {
+        /// <summary>
+        /// Compute the distance between two strings.
+        /// </summary>
+        public static int Compute(string s, string t)
+        {
+            int n = s.Length;
+            int m = t.Length;
+            int[,] d = new int[n + 1, m + 1];
+
+            // Step 1
+            if (n == 0)
+            {
+                return m;
+            }
+
+            if (m == 0)
+            {
+                return n;
+            }
+
+            // Step 2
+            for (int i = 0; i <= n; d[i, 0] = i++)
+            {
+            }
+
+            for (int j = 0; j <= m; d[0, j] = j++)
+            {
+            }
+
+            // Step 3
+            for (int i = 1; i <= n; i++)
+            {
+                //Step 4
+                for (int j = 1; j <= m; j++)
+                {
+                    // Step 5
+                    int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
+
+                    // Step 6
+                    d[i, j] = Math.Min(
+                        Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                        d[i - 1, j - 1] + cost);
+                }
+            }
+            // Step 7
+            return d[n, m];
+        }
     }
 
     internal delegate void SyncOp(Sync pSync, bool pBool);
@@ -320,8 +422,15 @@ namespace TTSConsoleLib.Audio
 
             if (settings != null && _voices.Any(w=>w.VoiceInfo.Name.ToLower().Contains(settings.Voice.Trim().ToLower())))
             {
-                var voice = _voices.FirstOrDefault(w => w.VoiceInfo.Name.ToLower().Contains(settings.Voice.Trim().ToLower()));
-                Synth.SelectVoice(voice.VoiceInfo.Name);
+                try
+                {
+                    var voice = _voices.FirstOrDefault(w => w.VoiceInfo.Name.ToLower().Contains(settings.Voice.Trim().ToLower()));
+                    Synth.SelectVoice(voice.VoiceInfo.Name);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log(ex.ToString());
+                }
             }
             else
             {

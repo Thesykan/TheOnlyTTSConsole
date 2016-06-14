@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TTSConsoleLib.IRC;
+using TTSConsoleLib.Utils;
 
 namespace TTSConsoleLib.Modules
 {
@@ -13,33 +14,51 @@ namespace TTSConsoleLib.Modules
     {
         private static WaveOut waveOut;
 
-        public static void StartASync(int frequency)
+        public static void StartASync(int frequency, float duration = 5.0f)
         {
-            ThreadPool.QueueUserWorkItem(x => Start(frequency));
+            ThreadPool.QueueUserWorkItem(x => Start(frequency,duration));
         }
 
-        private static void Start(int frequency)
+        private static void Start(int frequency, float pDuration)
         {
-            if (waveOut != null)
+            try
             {
-                waveOut.Stop();
-                waveOut.Dispose();
-                waveOut = null;
-            }
-
-            frequency = Math.Min(700, frequency);
-
-            var sineWaveProvider = new SineWaveProvider32(frequency, 0.05f);
-            sineWaveProvider.SetWaveFormat(44100, 2); // 16kHz mono
-            using (waveOut = new WaveOut())
-            {
-                waveOut.Init(sineWaveProvider);
-                waveOut.Play();
-
-                while(waveOut.PlaybackState == PlaybackState.Playing)
+                if (waveOut != null)
                 {
-                    Thread.Sleep(2000);
+                    try
+                    {
+                        waveOut.Stop();
+                        waveOut.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Log(ex.ToString());
+                    }
+                    finally
+                    {
+                        waveOut = null;
+                    }
                 }
+
+                frequency = Math.Min(700, frequency);
+
+                var sineWaveProvider = new SineWaveProvider32(frequency, 0.05f, pDuration);
+                sineWaveProvider.SetWaveFormat(44100, 2); // 16kHz mono
+                using (waveOut = new WaveOut())
+                {
+                    waveOut.Init(sineWaveProvider);
+                    waveOut.Play();
+
+                    while (waveOut.PlaybackState == PlaybackState.Playing)
+                    {
+                        Thread.Sleep(2000);
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(ex.ToString());
             }
         }
 
@@ -62,6 +81,8 @@ namespace TTSConsoleLib.Modules
 
     public abstract class WaveProvider32 : IWaveProvider
     {
+        protected float _duration = 5.0f;
+
         private WaveFormat waveFormat;
 
         public WaveProvider32()
@@ -106,22 +127,23 @@ namespace TTSConsoleLib.Modules
             Amplitude = 0.25f; // let's not hurt our ears            
         }
 
-        public SineWaveProvider32(float pFrequency, float pAmplitude)
+        public SineWaveProvider32(float pFrequency, float pAmplitude, float pDuration)
         {
+            _duration = pDuration;
             Frequency = pFrequency;
             Amplitude = Math.Min(0.25f, pAmplitude); // let's not hurt our ears        
-            frequencyOffset = Frequency / 5;
+            frequencyOffset = Frequency / _duration;
         }
 
-        private String expression;
-        public SineWaveProvider32(float pFrequency, float pAmplitude, String pExpression)
-        {
-            Frequency = pFrequency;
-            Amplitude = Math.Min(0.25f, pAmplitude); // let's not hurt our ears        
-            frequencyOffset = Frequency / 5;
+        //private String expression;
+        //public SineWaveProvider32(float pFrequency, float pAmplitude, String pExpression)
+        //{
+        //    Frequency = pFrequency;
+        //    Amplitude = Math.Min(0.25f, pAmplitude); // let's not hurt our ears        
+        //    frequencyOffset = Frequency / _duration;
 
-            expression = pExpression;
-        }
+        //    expression = pExpression;
+        //}
 
         public float Frequency { get; protected set; }
         public float Amplitude { get; protected set; }
@@ -143,7 +165,10 @@ namespace TTSConsoleLib.Modules
                     sample = 0;
                     //Frequency-= frequencyOffset;
                 }
+                
                 Frequency -= Math.Max(float.Epsilon,frequencyOffset / sampleCount);
+
+                Frequency = Math.Max(5f, Frequency);
             }
 
             if(Frequency < 15)

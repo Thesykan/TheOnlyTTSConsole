@@ -182,9 +182,9 @@ namespace TTSConsoleLib
             return (i > 9 ? "" : "0") + i;
         }
 
-        public void CommandKey()
+        public void CommandKey(bool pDown)
         {
-            Microphone.ToggleListen();
+            Microphone.ToggleListen(pDown);
         }
     }
 }

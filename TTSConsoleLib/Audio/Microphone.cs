@@ -6,6 +6,7 @@ using System.Speech.Recognition;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using TTSConsoleLib.Modules;
 
 namespace TTSConsoleLib.Audio
 {
@@ -19,6 +20,9 @@ namespace TTSConsoleLib.Audio
         static SpeechRecognitionEngine recognizer;
         public static void Init()
         {
+            //"boom shakalaka", "Wubba lubba dub dub", "Slow the frak down", "speed the hell up", "Play Normal Speed"
+            //"Hit the sack jack",
+
             recorder = new WaveInEvent();
             samplerate = recorder.WaveFormat.SampleRate;
             recorder.DataAvailable += RecorderOnDataAvailable;
@@ -31,15 +35,33 @@ namespace TTSConsoleLib.Audio
             // Create an in-process speech recognizer for the en-US locale.
             recognizer = new SpeechRecognitionEngine(new System.Globalization.CultureInfo("en-US"));
 
-            Choices colors = new Choices();
-            colors.Add(new string[] { "boom shakalaka", "Wubba lubba dub dub", "Slow the frak down", "speed the hell up", "Play Normal Speed" });
-            //"Hit the sack jack",
+            Choices normalCommands = new Choices();
+            normalCommands.Add(new string[] { "Clear Queue" });
+            normalCommands.Add(new string[] { "Speed Up" });
+            normalCommands.Add(new string[] { "Slow Down" });
+            normalCommands.Add(new string[] { "Normal speed" });
 
             GrammarBuilder gb = new GrammarBuilder();
-            gb.Append(colors);
+            gb.Append(normalCommands);
+
+
+            //Stop TTS For a user.
+            //BAN HAMMER and/or TIMEOUT?
+            //Number of TTS's (default 2) 
+
+            
+            //DynamicCommands.Add(new string[] { "Repeat dfoxlive last 5 messages" });
+            GrammarBuilder gb2 = new GrammarBuilder();
+            gb2.Append("repeat");
+            gb2.AppendDictation();
+            gb2.Append("message");
+
+
+
+            GrammarBuilder finalgb = new GrammarBuilder(new Choices(gb, gb2));
 
             // Create the Grammar instance.
-            Grammar g = new Grammar(gb);
+            Grammar g = new Grammar(finalgb);
 
             recognizer.LoadGrammar(g);
 
@@ -52,54 +74,67 @@ namespace TTSConsoleLib.Audio
             // Configure input to the speech recognizer.
             recognizer.SetInputToDefaultAudioDevice();
 
+            //DEFAULT OFF.
             // Start asynchronous, continuous speech recognition.
-            recognizer.RecognizeAsync(RecognizeMode.Multiple);
+            //recognizer.RecognizeAsync(RecognizeMode.Multiple);
         }
 
-        public static bool Listening = true;
-        public static void ToggleListen()
+        public static void ToggleListen(bool pListen)
         {
-            if (Listening)
+            if (recognizer.AudioState == AudioState.Stopped)
             {
-                IRC.IRCClient.PrintConsoleMessage("Stop Listening!!");
-                recognizer.RecognizeAsyncStop();
+                if (pListen)
+                {
+                    SoundSystem.StartASync(300,3);
+                    recognizer.RecognizeAsync(RecognizeMode.Multiple);
+                }
             }
             else
             {
-                IRC.IRCClient.PrintConsoleMessage("Start Listening!!");
-                recognizer.RecognizeAsync(RecognizeMode.Multiple);
+                if (!pListen)
+                {
+                    //SoundSystem.StartASync(200);
+                    recognizer.RecognizeAsyncStop();
+                }
             }
-            Listening = !Listening; 
         }
 
         private static void Sr_SpeechRecognized(object sender, SpeechRecognizedEventArgs e)
         {
             try
             {
-                if (e.Result.Confidence < 0.9f)
-                    return;
+                SoundSystem.StartASync(100);
 
-                var msg = e?.Result?.Text ?? String.Empty;
-                msg += " - " + e.Result.Confidence.ToString();
-                IRC.IRCClient.PrintConsoleMessage(msg);
+                //if (e.Result.Confidence < 0.9f)
+                //    return;
 
-                switch (e?.Result?.Text.ToLower() ?? null)
+                var msg = e?.Result?.Text?.ToLower() ?? String.Empty;
+                IRC.IRCClient.PrintConsoleMessage(msg + " - " + e.Result.Confidence.ToString());
+
+                switch (msg)
                 {
-                    case "boom shakalaka":
-                    case "wubba lubba dub dub":
-                    case "hit the sack jack":
-                        SyncPool.SkipOneMessage();
+                    case "clear queue":
+                        SyncPool.SkipALLMessages();
                         break;
-                    case "slow the frak down":
+                    case "slow down":
                         SyncPool.SlowDown();
                         break;
-                    case "speed the hell up":
+                    case "speed up":
                         SyncPool.SpeedUp();
                         break;
-                    case "play normal speed":
+                    case "normal speed":
                         SyncPool.NormalSpeed();
                         break;
                     default:
+
+                        //Advanced Command?
+
+                        if(msg.Contains("repeat") && msg.Contains("message"))
+                        {
+                            var user = msg.Replace("repeat", "").Replace("message", "");
+                            SyncPool.RepeatFuzzyUser(user);
+                        }
+
                         break;
                 }
 

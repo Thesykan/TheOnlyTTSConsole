@@ -152,9 +152,9 @@ namespace SimpleConsole
             if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN) //A Key was pressed down
             {
                 int vkCode = Marshal.ReadInt32(lParam);           //Get the keycode
-                if(vkCode == 192)
+                if(vkCode == 162)
                 {
-                    main.CommandKey();
+                    main.CommandKey(true);
                 }
 
                 //string theKey = ((Keys)vkCode).ToString();        //Name of the key
@@ -174,15 +174,21 @@ namespace SimpleConsole
                 //    Environment.Exit(0);                          //Exit our program
                 //}
             }
-            //else if (nCode >= 0 && wParam == (IntPtr)WM_KEYUP) //KeyUP
-            //{
-            //    int vkCode = Marshal.ReadInt32(lParam);        //Get Keycode
-            //    string theKey = ((Keys)vkCode).ToString();     //Get Key name
-            //    if (theKey.Contains("ControlKey"))             //If they let go of control
-            //    {
-            //        CONTROL_DOWN = false;                      //Unflag control
-            //    }
-            //}
+            else if (nCode >= 0 && wParam == (IntPtr)WM_KEYUP) //KeyUP
+            {
+                int vkCode = Marshal.ReadInt32(lParam);           //Get the keycode
+                if (vkCode == 162)
+                {
+                    main.CommandKey(false);
+                }
+
+                //    int vkCode = Marshal.ReadInt32(lParam);        //Get Keycode
+                //    string theKey = ((Keys)vkCode).ToString();     //Get Key name
+                //    if (theKey.Contains("ControlKey"))             //If they let go of control
+                //    {
+                //        CONTROL_DOWN = false;                      //Unflag control
+                //    }
+            }
             return CallNextHookEx(_hookID, nCode, wParam, lParam); //Call the next hook
         }
 
