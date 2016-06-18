@@ -8,6 +8,8 @@ using Newtonsoft.Json;
 using System.IO;
 using TTSConsoleLib.Utils;
 using System.Threading;
+using System.Net.Cache;
+using Newtonsoft.Json.Linq;
 
 namespace TTSConsoleLib.Twitch
 {
@@ -16,11 +18,9 @@ namespace TTSConsoleLib.Twitch
         public static String _channel = String.Empty;
 
         private static Timer _updateRealTimeTimer;
-        private static Timer _updateNonRealTimeTimer;
         public static void Init()
         {
             _updateRealTimeTimer = new Timer(x => UpdateRealtimeTwitchVariables(), null, 0, 60000); // 1 min
-            _updateNonRealTimeTimer = new Timer(x => UpdateNonRealtimeTwitchVariables(), null, 0, 600000); //10 mins
         }
 
         private static TW_StreamInfo StreamInfo;
@@ -52,53 +52,31 @@ namespace TTSConsoleLib.Twitch
             return ChatInfo?.chatters?.GetAllChatters() ?? EmptyStringArray;
         }
 
-        private static TW_FollowerInfo FollowInfo;
         public static bool IsFollower(String pUserName)
         {
-            return FollowInfo?.isFollower(pUserName) ?? false;
+            return followers?.Any(x => x.user.name == pUserName) ?? false;
         }
 
         /// <summary>
         /// Update Twitch Variables
         /// </summary>
+        /// 
+        private static int FollowOffset = 0;
         public static void UpdateRealtimeTwitchVariables()
         {
             try
             {
                 // Stripping # from channel name for API calls
                 string channel = _channel.Replace("#", "");
-
-                WebRequest request = WebRequest.Create("https://api.twitch.tv/kraken/streams/" + channel);
-                var response = request.GetResponseAsync();
-                response.ContinueWith(StreamRequestComplete);
-
-                request = WebRequest.Create("http://tmi.twitch.tv/group/user/" + channel + "/chatters");
-                response = request.GetResponseAsync();
-                response.ContinueWith(ChatterRequestComplete);
+                GetData("https://api.twitch.tv/kraken/streams/" + channel, StreamRequestComplete);
+                GetData("http://tmi.twitch.tv/group/user/" + channel + "/chatters", ChatterRequestComplete);
+                GetData("https://api.twitch.tv/kraken/channels/" + channel + "/follows?direction=ASC&limit=1000&offset=" + FollowOffset.ToString(), FollowersRequestComplete);
             }
             catch (Exception ex)
             {
                 Logger.Log(ex.ToString());
             }
         }
-
-        public static void UpdateNonRealtimeTwitchVariables()
-        {
-            try
-            {
-                // Stripping # from channel name for API calls
-                string channel = _channel.Replace("#", "");
-
-                var request = WebRequest.Create("https://api.twitch.tv/kraken/channels/" + channel + "/follows");
-                var response = request.GetResponseAsync();
-                response.ContinueWith(FollowersRequestComplete);
-            }
-            catch (Exception ex)
-            {
-                Logger.Log(ex.ToString());
-            }
-        }
-
 
         private static void StreamRequestComplete(Task<WebResponse> obj)
         {
@@ -151,7 +129,10 @@ namespace TTSConsoleLib.Twitch
                 Logger.Log(ex.ToString());
             }
         }
-        
+
+        static List<TW_Follower> followers = new List<TW_Follower>();
+        static bool NewFollowers = false;
+        static int LastTotal = 0;
         private static void FollowersRequestComplete(Task<WebResponse> obj)
         {
             try
@@ -163,16 +144,68 @@ namespace TTSConsoleLib.Twitch
                 var twitchObj = JsonConvert.DeserializeObject<TW_FollowerInfo>(text);
                 response.Close();
 
-                var oldInfo = ChatInfo;
-                FollowInfo = twitchObj;
+                if (twitchObj != null && twitchObj.follows != null)
+                {
+                    FollowOffset += twitchObj.follows.Count;
 
+                    if (twitchObj.follows.Count == 0)
+                        NewFollowers = true;
+
+                    followers.AddRange(twitchObj.follows);
+
+                    if (NewFollowers)
+                    {
+                        foreach (var follow in twitchObj.follows)
+                        {
+                            IRC.IRCClient.PrintConsoleMessage("!New Follower! " + follow.user.name + " @ " + follow.created_at.ToLocalTime().ToString());
+                        }
+                    }
+
+                    if(LastTotal != twitchObj._total)
+                    {
+                        LastTotal = twitchObj._total;
+                        if (LastTotal > FollowOffset)
+                            FollowOffset = LastTotal;
+                    }
+                }
             }
             catch (Exception ex)
             {
                 Logger.Log(ex.ToString());
             }
         }
+
+
+        private static void GetData(String pUrl, Action<Task<WebResponse>> pOnReponse)
+        {
+            if (pUrl.Contains("?"))
+            {
+                pUrl += "&utcnow=" + DateTime.UtcNow.Ticks;
+            }
+            else
+            {
+                pUrl += "?utcnow=" + DateTime.UtcNow.Ticks;
+            }
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(pUrl);
+
+            String oauth = String.Empty;
+            String ClientId = @"ci2tc032wxaprwrcpz7qaqi8u70n7t8";
+            //request.Method = "application/vnd.twitchtv.v3+json";
+            request.ContentType = "application/json";
+            request.Headers.Add("Client-ID", ClientId);
+            request.UserAgent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.52 Safari/537.36 TheOnlyTTSConsole/2016";
+            //request.Headers.Add("Authorization", "OAuth " + oauth);
+            request.CachePolicy = new RequestCachePolicy(RequestCacheLevel.NoCacheNoStore);
+            request.Timeout = 2 * 1000;
+
+            var response = request.GetResponseAsync();
+            response.ContinueWith(pOnReponse);
+
+        }
     }
+
+    
+
 
 
 
@@ -263,17 +296,8 @@ namespace TTSConsoleLib.Twitch
 
     public class TW_FollowerInfo
     {
+        public int _total;
         public List<TW_Follower> follows;
-
-        HashSet<String> userHashSet = null;
-        public bool isFollower(String pUserName)
-        {
-            if (userHashSet != null)
-                return userHashSet.Contains(pUserName);
-
-            userHashSet = new HashSet<string>(follows.Select(s => s.user.name));
-            return userHashSet.Contains(pUserName);
-        }
     }
 
     public class TW_Follower
@@ -284,7 +308,7 @@ namespace TTSConsoleLib.Twitch
         public DateTime created_at;
 
         public TW_FollowerUser user;
-
+        
     }
     public class TW_FollowerUser
     {

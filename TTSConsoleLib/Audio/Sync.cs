@@ -358,53 +358,53 @@ namespace TTSConsoleLib.Audio
 
         public void ReloadLexicons()
         {
-            var settings = UserManager.GetUserSettings();
-            if (!Directory.Exists("Lexicons"))
-            {
-                Directory.CreateDirectory("Lexicons");
-            }
-            foreach (var userSetting in settings)
-            {
-                if (userSetting.Lexicon != null)
-                {
-                    var path = $"Lexicons\\{userSetting.UserName}.pls";
-                    if (!File.Exists(path))
-                    {
-                        String str = System.Text.UTF8Encoding.Default.GetString(Convert.FromBase64String(_lexiconXML));
-                        str = str.Replace("#0#", userSetting.UserName);
-                        str = str.Replace("#1#", userSetting.Lexicon);
-                        File.WriteAllText(path, str);
-                    }
-                    else
-                    {
-                        var lexicon = File.ReadAllText(path);
-                        if(!lexicon.Contains(userSetting.Lexicon))
-                        {
-                            File.Delete(path);
+            //var settings = UserManager.GetUserSettings();
+            //if (!Directory.Exists("Lexicons"))
+            //{
+            //    Directory.CreateDirectory("Lexicons");
+            //}
+            //foreach (var userSetting in settings)
+            //{
+            //    if (userSetting.Lexicon != null)
+            //    {
+            //        var path = $"Lexicons\\{userSetting.UserName}.pls";
+            //        if (!File.Exists(path))
+            //        {
+            //            String str = System.Text.UTF8Encoding.Default.GetString(Convert.FromBase64String(_lexiconXML));
+            //            str = str.Replace("#0#", userSetting.UserName);
+            //            str = str.Replace("#1#", userSetting.Lexicon);
+            //            File.WriteAllText(path, str);
+            //        }
+            //        else
+            //        {
+            //            var lexicon = File.ReadAllText(path);
+            //            if(!lexicon.Contains(userSetting.Lexicon))
+            //            {
+            //                File.Delete(path);
 
-                            String str = System.Text.UTF8Encoding.Default.GetString(Convert.FromBase64String(_lexiconXML));
-                            str = str.Replace("#0#", userSetting.UserName);
-                            str = str.Replace("#1#", userSetting.Lexicon);
-                            File.WriteAllText(path, str);
-                        }
-                    }
-                    var uri = new Uri(Path.GetFullPath(path));
-                    try
-                    {
-                        Synth.AddLexicon(uri, "application/pls+xml");
-                    }
-                    catch
-                    {
-                        try
-                        {
-                            Synth.RemoveLexicon(uri);
-                            Synth.AddLexicon(uri, "application/pls+xml");
-                        }
-                        catch { }
-                    }
-                    LoadedLexicons.Add(uri);
-                }
-            }
+            //                String str = System.Text.UTF8Encoding.Default.GetString(Convert.FromBase64String(_lexiconXML));
+            //                str = str.Replace("#0#", userSetting.UserName);
+            //                str = str.Replace("#1#", userSetting.Lexicon);
+            //                File.WriteAllText(path, str);
+            //            }
+            //        }
+            //        var uri = new Uri(Path.GetFullPath(path));
+            //        try
+            //        {
+            //            Synth.AddLexicon(uri, "application/pls+xml");
+            //        }
+            //        catch
+            //        {
+            //            try
+            //            {
+            //                Synth.RemoveLexicon(uri);
+            //                Synth.AddLexicon(uri, "application/pls+xml");
+            //            }
+            //            catch { }
+            //        }
+            //        LoadedLexicons.Add(uri);
+            //    }
+            //}
         }
 
         public void Enqueue()
