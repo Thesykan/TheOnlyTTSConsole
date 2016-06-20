@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using TTSConsoleLib.Audio;
 using TTSConsoleLib.IRC;
@@ -12,52 +13,29 @@ using TTSConsoleLib.Utils;
 
 namespace TTSConsoleLib
 {
-    public delegate String QuestionUser(String pMessage);
-    public delegate void WriteLineToUser(String pMessage, ConsoleColor pColor);
+    public delegate Task<String> QuestionUser(String pMessage);
     public delegate void WriteToUser(String pMessage, ConsoleColor pColor);
 
     public class Main
     {
+        public event QuestionUser UserDialog;
+        public event WriteToUser WriteToConsole;
+        public event WriteToUser WriteLineToConsole;
+
+
         private WriteToUser Write;
-        private WriteLineToUser WriteLine;
-        public void Start(QuestionUser pMethod, WriteToUser pWriteMethod, WriteLineToUser pWriteLineMethod)
+        private WriteToUser WriteLine;
+        private QuestionUser QuestionUser;
+        public bool GlobalSpeak = true;
+        public void Start(QuestionUser pMethod, WriteToUser pWriteMethod, WriteToUser pWriteLineMethod)
         {
             Write = pWriteMethod;
             WriteLine = pWriteLineMethod;
+            QuestionUser = pMethod;
 
-            string userName = string.Empty;
-            if (!File.Exists("Username.USER"))
+            if (!FirstTimeSetup(QuestionUser))
             {
-                userName = pMethod("UserName?");
-                File.WriteAllText("Username.USER", userName);
-            }
-            else
-            {
-                userName = File.ReadAllText("Username.USER");
-            }
-
-            if (!File.Exists("SecretTokenDontLOOK.TOKEN"))
-            {
-                var password = pMethod("Token?");
-                File.WriteAllText("SecretTokenDontLOOK.TOKEN", password);
-            }
-
-            if (!File.Exists("Channel.JOIN"))
-            {
-                var channel = pMethod("Channel?(Leave blank for your own channel)");
-
-                if (String.IsNullOrEmpty(channel))
-                    channel = "#" + userName;
-
-                if (!channel.StartsWith("#"))
-                    channel = "#" + channel;
-
-                File.WriteAllText("Channel.JOIN", channel);
-                Twitch.TwitchAPI._channel = channel;
-            }
-            else
-            {
-                Twitch.TwitchAPI._channel = File.ReadAllText("Channel.JOIN");
+                throw new Exception("First Time Params Not Set");
             }
 
             IRCClient.Start(HandleUserCommands, Twitch.TwitchAPI._channel);
@@ -72,7 +50,78 @@ namespace TTSConsoleLib
             //IRCMessage message = new IRCMessage();
             //message.userName = userName;
             //message.channel = Twitch.TwitchAPI._channel;
-          
+
+        }
+
+        private static bool FirstTimeSetup(QuestionUser pMethod)
+        {
+            string userName = string.Empty;
+            if (!File.Exists("Username.USER"))
+            {
+                userName = pMethod("UserName?")?.Result;
+                if (userName == null)
+                    return false;
+                File.WriteAllText("Username.USER", userName);
+            }
+            else
+            {
+                userName = File.ReadAllText("Username.USER");
+            }
+
+            if (!File.Exists("SecretTokenDontLOOK.TOKEN"))
+            {
+                var password = pMethod("Token?")?.Result;
+                if (userName == null)
+                    return false;
+                File.WriteAllText("SecretTokenDontLOOK.TOKEN", password);
+            }
+
+            if (!File.Exists("Channel.JOIN"))
+            {
+                var channel = pMethod("Channel?(Leave blank for your own channel)")?.Result;
+                if (userName == null)
+                    return false;
+                if (String.IsNullOrEmpty(channel))
+                    channel = "#" + userName;
+
+                if (!channel.StartsWith("#"))
+                    channel = "#" + channel;
+
+                File.WriteAllText("Channel.JOIN", channel);
+                Twitch.TwitchAPI._channel = channel;
+            }
+            else
+            {
+                Twitch.TwitchAPI._channel = File.ReadAllText("Channel.JOIN");
+            }
+            return true;
+        }
+
+        public void Start()
+        {
+            QuestionUser = ((x) => UserDialog?.Invoke(x));
+            Write = ((x, z) => WriteToConsole?.Invoke(x, z));
+            WriteLine = ((x, z) => WriteLineToConsole?.Invoke(x, z));
+
+            ThreadPool.QueueUserWorkItem(obj =>
+            {
+
+                if (!FirstTimeSetup(QuestionUser))
+                {
+                    throw new Exception("First Time Params Not Set");
+                }
+
+                IRCClient.Start(HandleUserCommands, Twitch.TwitchAPI._channel);
+
+                TwitchAPI.Init();
+                VoteSystem.Init();
+                UserManager.Init();
+                IRCClient.Init(ConsoleWrite);
+                MemorySystem._instance.Init();
+                Microphone.Init();
+
+            });
+
         }
 
         public void SendIRCMessage(String writeMessage)
@@ -113,7 +162,10 @@ namespace TTSConsoleLib
             if (pMessageInfo.message.Trim().StartsWith("!"))
                 SpeakText = false;
 
-            if (SpeakText)
+            if (LUIS_System.HandleMessages(pMessageInfo))
+                SpeakText = false;
+            
+            if (SpeakText && GlobalSpeak)
                 SyncPool.SpeakText(pMessageInfo);
 
             ConsoleWrite(pMessageInfo);

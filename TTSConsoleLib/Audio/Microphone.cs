@@ -85,7 +85,7 @@ namespace TTSConsoleLib.Audio
             {
                 if (pListen)
                 {
-                    SoundSystem.StartASync(300,3);
+                    //SoundSystem.StartASync(300,3);
                     recognizer.RecognizeAsync(RecognizeMode.Multiple);
                 }
             }

@@ -10,6 +10,9 @@ using TTSConsoleLib.Utils;
 using System.Threading;
 using System.Net.Cache;
 using Newtonsoft.Json.Linq;
+using System.Text.RegularExpressions;
+using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 
 namespace TTSConsoleLib.Twitch
 {
@@ -18,10 +21,37 @@ namespace TTSConsoleLib.Twitch
         public static String _channel = String.Empty;
 
         private static Timer _updateRealTimeTimer;
+
+        private static TW_EmotesInfo _emotes;
+
         public static void Init()
         {
             _updateRealTimeTimer = new Timer(x => UpdateRealtimeTwitchVariables(), null, 0, 60000); // 1 min
+
+            var emotesFileName = "TwitchEmotes.EMOTES";
+            if (File.Exists(emotesFileName))
+            {
+                _emotes = JsonConvert.DeserializeObject<TW_EmotesInfo>(File.ReadAllText(emotesFileName));
+            }
+            else
+            {
+                var request = WebRequest.Create("https://api.twitch.tv/kraken/chat/emoticons");
+                request.GetResponseAsync().ContinueWith(LoadEmotes);
+            }
         }
+
+        private static void LoadEmotes(Task<WebResponse> obj)
+        {
+            var response = obj.Result;
+            var responseStream = response.GetResponseStream();
+            var streamReader = new StreamReader(responseStream);
+            var text = streamReader.ReadToEnd();
+
+            File.WriteAllText("TwitchEmotes.EMOTES", text);
+            response.Close();
+            _emotes = JsonConvert.DeserializeObject<TW_EmotesInfo>(text);
+        }
+
 
         private static TW_StreamInfo StreamInfo;
         public static int GetNumberOfViewers()
@@ -77,6 +107,18 @@ namespace TTSConsoleLib.Twitch
                 Logger.Log(ex.ToString());
             }
         }
+
+
+        public static bool TextHasEmote(String pText)
+        {
+            return _emotes?.HasEmoteInText(pText) ?? false;
+        }
+
+        public static List<TextOrImage> ConvertText(String pText)
+        {
+            return _emotes?.ConvertText(pText) ?? new List<TextOrImage>();
+        }
+
 
         private static void StreamRequestComplete(Task<WebResponse> obj)
         {
@@ -204,10 +246,12 @@ namespace TTSConsoleLib.Twitch
         }
     }
 
-    
-
-
-
+    public class TextOrImage
+    {
+        public bool isText = true;
+        public Image Image = null;
+        public String Text = null;
+    }
 
     public class TW_StreamInfo : IEquatable<TW_StreamInfo>
     {
@@ -306,13 +350,200 @@ namespace TTSConsoleLib.Twitch
         /// Started Following
         /// </summary>
         public DateTime created_at;
-
         public TW_FollowerUser user;
-        
     }
     public class TW_FollowerUser
     {
         public String name;
+    }
+
+
+
+    public class TW_EmotesInfo
+    {
+        public List<TW_Emotes> emoticons;
+
+        Regex reg = null;
+        public bool HasEmoteInText(String pText)
+        {
+            if (emoticons == null)
+                return false;
+
+            pText = " " + pText + " ";
+
+            if (reg == null)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append("(");
+
+                for (int i = 0; i < emoticons.Count; i++)
+                {
+                    sb.Append("[^a-zA-Z]" + Regex.Escape(emoticons[i].regex) + "[^a-zA-Z]");
+                    if (i != emoticons.Count - 1)
+                        sb.Append("|");
+                }
+
+                sb.Append(")");
+                reg = new Regex(sb.ToString(), RegexOptions.IgnoreCase);
+            }
+            return reg.IsMatch(pText);
+        }
+
+        public List<TextOrImage> ConvertText(String pText)
+        {
+            pText = " " + pText + " ";
+
+            List<TextOrImage> list = new List<TextOrImage>();
+            //var matches = reg.Match(pTest);
+            var split = reg.Split(pText);
+
+            for (int i = 0; i < split.Length; i++)
+            {
+                if (_hashSetImages.ContainsKey(split[i].ToLower().Trim()))
+                {
+                    Image image = new Image();
+                    image.Source = _hashSetImages[split[i].ToLower().Trim()];
+                    image.Height = 14;
+                    //image.Width = 20;
+
+                    list.Add(new TextOrImage() { Image = image, isText = false });
+                }
+                else if (hashSet.ContainsKey(split[i].ToLower().Trim()))
+                {
+                    string url = hashSet[split[i].ToLower().Trim()].url;
+                    BitmapImage bitmap = new BitmapImage(new Uri(url));
+                    Image image = new Image();
+                    image.Source = bitmap;
+                    image.Height = 14;
+                    //image.Width = 20;
+
+                    _hashSetImages.Add(split[i].ToLower().Trim(), bitmap);
+
+                    list.Add(new TextOrImage() { Image = image, isText = false });
+                }
+                else
+                {
+                    list.Add(new TextOrImage() { Text = split[i] });
+                }
+            }
+
+
+            //Match item = matches;
+            //for (int i = 0; i < split.Length; i++)
+            //{
+            //    list.Add(new TextOrImage() { Text = split[i] });
+
+            //    if (item.Success)
+            //    {
+            //        //This is an emote...
+            //        if (_hashSetImages.ContainsKey(item.Value.ToLower()))
+            //        {
+            //            Image image = new Image();
+            //            image.Source = _hashSetImages[item.Value.ToLower()];
+            //            image.Width = 20;
+
+            //            list.Add(new TextOrImage() { Image = image, isText = false });
+            //        }
+            //        else if (hashSet.ContainsKey(item.Value.ToLower()))
+            //        {
+            //            string url = hashSet[item.Value.ToLower()].url;
+            //            BitmapImage bitmap = new BitmapImage(new Uri(url));
+            //            Image image = new Image();
+            //            image.Source = bitmap;
+            //            image.Width = 20;
+
+            //            _hashSetImages.Add(item.Value.ToLower(), bitmap);
+
+            //            list.Add(new TextOrImage() { Image = image, isText = false });
+            //        }
+            //        else
+            //        {
+            //            list.Add(new TextOrImage() { Text = item.Value });
+            //        }
+            //    }
+            //    else
+            //    {
+            //        list.Add(new TextOrImage() { Text = item.Value });
+            //    }
+            //item = item.NextMatch();
+            //}
+
+            //Match item = matches;
+            //while(item != null && item.Length > 0)
+            //{
+            //    if (item.Success)
+            //    {
+            //        //This is an emote...
+            //        if (_hashSetImages.ContainsKey(item.Value.ToLower()))
+            //        {
+            //            Image image = new Image();
+            //            image.Source = _hashSetImages[item.Value.ToLower()];
+            //            image.Width = 20;
+
+            //            list.Add(new TextOrImage() { Image = image, isText = false });
+            //        }
+            //        else if (hashSet.ContainsKey(item.Value.ToLower()))
+            //        {
+            //            string url = hashSet[item.Value.ToLower()].url;
+            //            BitmapImage bitmap = new BitmapImage(new Uri(url));
+            //            Image image = new Image();
+            //            image.Source = bitmap;
+            //            image.Width = 20;
+
+            //            _hashSetImages.Add(item.Value.ToLower(), bitmap);
+
+            //            list.Add(new TextOrImage() { Image = image, isText = false });
+            //        }
+            //        else
+            //        {
+            //            list.Add(new TextOrImage() { Text = item.Value });
+            //        }
+            //        //list.Add(new TextOrImage() { Text = item.Value });
+            //    }
+            //    else
+            //    {
+            //        list.Add(new TextOrImage() { Text = item.Value });
+            //    }
+
+            //    item = item.NextMatch();
+            //}
+
+            return list;
+        }
+
+        private Dictionary<String, BitmapImage> _hashSetImages = new Dictionary<string, BitmapImage>();
+        private Dictionary<String, TW_Emote> _hashSet;
+        public Dictionary<String, TW_Emote> hashSet
+        {
+            get
+            {
+                if(_hashSet == null)
+                {
+                    _hashSet = new Dictionary<string, TW_Emote>();
+                    foreach (var item in emoticons)
+                    {
+                        if (!_hashSet.ContainsKey(item.regex.ToLower()))
+                            _hashSet.Add(item.regex.ToLower(), item.images.FirstOrDefault());
+                    }
+                    //_hashSet = emoticons.ToDictionary(k => k.regex.ToLower(), v => v.images.FirstOrDefault());
+                }
+                return _hashSet;
+            }
+        }
+
+
+    }
+    public class TW_Emotes
+    {
+        public String regex;
+        public List<TW_Emote> images;
+    }
+    public class TW_Emote
+    {
+        public int? width;
+        public int? height;
+        public String url;
+        public int? emoticon_set;
     }
 
 
